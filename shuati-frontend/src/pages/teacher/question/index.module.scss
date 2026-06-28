@@ -1,0 +1,133 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  padding: $page-padding;
+  padding-bottom: $spacing-xl;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.title {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.addButton {
+  background: $color-primary;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-button;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.addText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+}
+
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-md;
+}
+
+.filterItem {
+  padding: $spacing-xs $spacing-sm;
+  margin-right: $spacing-sm;
+  margin-bottom: $spacing-sm;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  border: 1rpx solid $color-border;
+}
+
+.filterActive {
+  background: rgba($color-primary, 0.1);
+  color: $color-primary;
+  border-color: $color-primary;
+}
+
+.list {
+  margin-top: $spacing-sm;
+}
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.subject {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  background: rgba($color-primary, 0.1);
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+  margin-right: $spacing-sm;
+}
+
+.type {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.content {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  line-height: $line-height-normal;
+  margin-bottom: $spacing-sm;
+}
+
+.answer {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-md;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actionButton {
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-md;
+  margin-left: $spacing-sm;
+}
+
+.edit {
+  background: rgba($color-primary, 0.1);
+}
+
+.delete {
+  background: rgba($color-error, 0.1);
+}
+
+.actionText {
+  font-size: $font-size-sm;
+}
+
+.edit .actionText {
+  color: $color-primary;
+}
+
+.delete .actionText {
+  color: $color-error;
+}

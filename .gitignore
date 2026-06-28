@@ -1,0 +1,31 @@
+# 依赖目录
+node_modules/
+.pnpm-store/
+
+# 构建产物
+target/
+dist/
+build/
+*.zip
+*.tar.gz
+
+# IDE / 工具缓存
+.pai/
+.vscode/
+.idea/
+*.imls
+*.ipr
+*.iws
+.swc/
+
+# 环境变量 / 本地配置（example 模板除外）
+.env
+.env.*
+!.env.example
+
+# 本地数据
+uploads/
+mysql_data/
+
+# 日志
+*.log

@@ -1,0 +1,83 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  padding: $page-padding;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: $radius-round;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: $spacing-md;
+}
+
+.avatarText {
+  font-size: $font-size-xxl;
+  color: $color-text-white;
+  font-weight: $font-weight-semibold;
+}
+
+.info {
+  flex: 1;
+}
+
+.name {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.meta {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.stats {
+  display: flex;
+  margin-bottom: $spacing-md;
+}
+
+.menuCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: 0 $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 96rpx;
+}
+
+.menuText {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.arrow {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+}
+
+.divider {
+  height: 1rpx;
+  background: $color-divider;
+}

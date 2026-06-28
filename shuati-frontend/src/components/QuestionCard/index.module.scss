@@ -1,0 +1,62 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.subject {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  background: rgba($color-primary, 0.1);
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+  margin-right: $spacing-sm;
+}
+
+.type {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-right: $spacing-sm;
+}
+
+.content {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  line-height: $line-height-normal;
+  margin-bottom: $spacing-md;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.score {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.action {
+  font-size: $font-size-sm;
+  color: $color-primary;
+}
