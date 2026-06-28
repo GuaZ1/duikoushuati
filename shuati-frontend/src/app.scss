@@ -1,0 +1,11 @@
+@use '@/styles/variables.scss' as *;
+
+page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f0f5ff 0%, $color-bg-page 30%);
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
+}
