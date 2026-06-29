@@ -23,6 +23,12 @@ build/
 .env.*
 !.env.example
 
+# Spring Boot 本地环境配置（example 模板除外）
+shuati-backend/src/main/resources/application-local.yml
+shuati-backend/src/main/resources/application-*.yml
+!shuati-backend/src/main/resources/application.yml
+!shuati-backend/src/main/resources/application-local.yml.example
+
 # 本地数据
 uploads/
 mysql_data/
