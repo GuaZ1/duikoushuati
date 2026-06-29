@@ -1,4 +1,4 @@
-package com.shuati.service;
+package com.shuati.service.impl;
 
 import com.shuati.dto.AnswerRequest;
 import com.shuati.dto.AnswerResultDto;
@@ -6,6 +6,7 @@ import com.shuati.entity.*;
 import com.shuati.enums.CorrectStatus;
 import com.shuati.enums.QuestionType;
 import com.shuati.mapper.*;
+import com.shuati.service.AnswerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

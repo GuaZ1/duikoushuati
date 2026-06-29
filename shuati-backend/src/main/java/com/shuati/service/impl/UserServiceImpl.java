@@ -1,4 +1,4 @@
-package com.shuati.service;
+package com.shuati.service.impl;
 
 import com.shuati.dto.ProgressDto;
 import com.shuati.dto.WrongNotebookDto;
@@ -13,6 +13,7 @@ import com.shuati.mapper.StudyProgressMapper;
 import com.shuati.mapper.SubjectMapper;
 import com.shuati.mapper.UserMapper;
 import com.shuati.mapper.WrongNotebookMapper;
+import com.shuati.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
