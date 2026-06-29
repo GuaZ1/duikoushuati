@@ -1,7 +1,8 @@
-package com.shuati.service;
+package com.shuati.service.impl;
 
 import com.shuati.entity.Subject;
 import com.shuati.mapper.SubjectMapper;
+import com.shuati.service.SubjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
