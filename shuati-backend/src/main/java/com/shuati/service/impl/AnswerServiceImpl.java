@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,8 +25,7 @@ public class AnswerServiceImpl implements AnswerService {
 
     private final QuestionCacheService questionCacheService;
     private final AnswerRecordMapper answerRecordMapper;
-    private final WrongNotebookMapper wrongNotebookMapper;
-    private final StudyProgressMapper studyProgressMapper;
+    private final AsyncAnswerService asyncAnswerService;
 
     @Override
     @Transactional
@@ -62,17 +60,14 @@ public class AnswerServiceImpl implements AnswerService {
         log.info("[submitAnswer] insert answer record: {} ms", (t3 - stepStart) / 1_000_000);
         stepStart = t3;
 
-        updateWrongNotebook(request.getStudentId(), question, status);  //更新错题本
+        asyncAnswerService.updateWrongNotebook(request.getStudentId(), question.getId(), status);
+        asyncAnswerService.updateStudyProgress(
+                request.getStudentId(), question.getSubjectId(), question.getKnowledgePointIds(), status);
         long t4 = System.nanoTime();
-        log.info("[submitAnswer] update wrong notebook: {} ms", (t4 - stepStart) / 1_000_000);
-        stepStart = t4;
-
-        updateStudyProgress(request.getStudentId(), question, status);  //更新学习记录
-        long t5 = System.nanoTime();
-        log.info("[submitAnswer] update study progress: {} ms", (t5 - stepStart) / 1_000_000);
+        log.info("[submitAnswer] trigger async tasks: {} ms", (t4 - stepStart) / 1_000_000);
 
         log.info("[submitAnswer] total: {} ms, questionId={}, studentId={}",
-                (t5 - start) / 1_000_000, request.getQuestionId(), request.getStudentId());
+                (t4 - start) / 1_000_000, request.getQuestionId(), request.getStudentId());
 
         AnswerResultDto result = new AnswerResultDto();
         result.setCorrectStatus(status);
@@ -127,70 +122,5 @@ public class AnswerServiceImpl implements AnswerService {
         }
         long correctCount = selectedKeys.stream().filter(correctKeys::contains).count();
         return correctCount > 0 ? CorrectStatus.PARTIAL : CorrectStatus.WRONG;
-    }
-
-    private void updateWrongNotebook(Long studentId, Question question, CorrectStatus status) {
-        WrongNotebook notebook = wrongNotebookMapper.findByStudentIdAndQuestionId(studentId, question.getId());
-        if (status == CorrectStatus.CORRECT) {
-            if (notebook != null) {
-                notebook.setMastered(true);
-                wrongNotebookMapper.update(notebook);
-            }
-            return;
-        }
-        if (notebook == null) {
-            notebook = new WrongNotebook();
-            notebook.setStudentId(studentId);
-            notebook.setQuestionId(question.getId());
-            notebook.setWrongCount(0);
-            notebook.setMastered(false);
-        }
-        notebook.setWrongCount(notebook.getWrongCount() + 1);
-        notebook.setMastered(false);
-        notebook.setLastWrongAt(LocalDateTime.now());
-        if (notebook.getId() == null) {
-            wrongNotebookMapper.insert(notebook);
-        } else {
-            wrongNotebookMapper.update(notebook);
-        }
-    }
-
-    private void updateStudyProgress(Long userId, Question question, CorrectStatus status) {
-        String kpIds = question.getKnowledgePointIds();
-        if (kpIds == null || kpIds.isBlank()) {
-            return;
-        }
-        Long firstKpId = Arrays.stream(kpIds.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(Long::parseLong)
-                .findFirst()
-                .orElse(null);
-        if (firstKpId == null) {
-            return;
-        }
-        StudyProgress progress = studyProgressMapper
-                .findByUserIdAndSubjectIdAndKnowledgePointId(userId, question.getSubjectId(), firstKpId);
-        if (progress == null) {
-            progress = new StudyProgress();
-            progress.setUserId(userId);
-            progress.setSubjectId(question.getSubjectId());
-            progress.setKnowledgePointId(firstKpId);
-            progress.setPracticedCount(0);
-            progress.setCorrectCount(0);
-            progress.setMasteryRate(0);
-        }
-        progress.setPracticedCount(progress.getPracticedCount() + 1);
-        if (status == CorrectStatus.CORRECT) {
-            progress.setCorrectCount(progress.getCorrectCount() + 1);
-        }
-        int rate = progress.getPracticedCount() == 0 ? 0
-                : progress.getCorrectCount() * 100 / progress.getPracticedCount();
-        progress.setMasteryRate(Math.min(rate, 100));
-        if (progress.getId() == null) {
-            studyProgressMapper.insert(progress);
-        } else {
-            studyProgressMapper.update(progress);
-        }
     }
 }
