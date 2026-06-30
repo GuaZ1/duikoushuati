@@ -7,7 +7,9 @@ import com.shuati.enums.CorrectStatus;
 import com.shuati.enums.QuestionType;
 import com.shuati.mapper.*;
 import com.shuati.service.AnswerService;
+import com.shuati.service.QuestionCacheService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,12 +18,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
+
 @Service
 @RequiredArgsConstructor
 public class AnswerServiceImpl implements AnswerService {
 
-    private final QuestionMapper questionMapper;
-    private final QuestionOptionMapper questionOptionMapper;
+    private final QuestionCacheService questionCacheService;
     private final AnswerRecordMapper answerRecordMapper;
     private final WrongNotebookMapper wrongNotebookMapper;
     private final StudyProgressMapper studyProgressMapper;
@@ -29,12 +32,24 @@ public class AnswerServiceImpl implements AnswerService {
     @Override
     @Transactional
     public AnswerResultDto submitAnswer(AnswerRequest request) {
-        Question question = questionMapper.findById(request.getQuestionId());
+        long start = System.nanoTime();
+        long stepStart = start;
+
+        Question question = questionCacheService.getQuestionById(request.getQuestionId());   //根据用户的题目id找题目
+
+
+        long t1 = System.nanoTime();
+        log.info("[submitAnswer] query question: {} ms", (t1 - stepStart) / 1_000_000);
+        stepStart = t1;
+
         if (question == null) {
             throw new IllegalArgumentException("题目不存在");
         }
 
-        CorrectStatus status = grade(question, request.getAnswer());
+        CorrectStatus status = grade(question, request.getAnswer());    //判断对错
+        long t2 = System.nanoTime();
+        log.info("[submitAnswer] grade: {} ms", (t2 - stepStart) / 1_000_000);
+        stepStart = t2;
 
         AnswerRecord record = new AnswerRecord();
         record.setStudentId(request.getStudentId());
@@ -42,10 +57,22 @@ public class AnswerServiceImpl implements AnswerService {
         record.setStudentAnswer(request.getAnswer());
         record.setCorrectStatus(status);
         record.setScore(status == CorrectStatus.CORRECT ? question.getScore() : 0);
-        answerRecordMapper.insert(record);
+        answerRecordMapper.insert(record);                              //插入答题记录
+        long t3 = System.nanoTime();
+        log.info("[submitAnswer] insert answer record: {} ms", (t3 - stepStart) / 1_000_000);
+        stepStart = t3;
 
-        updateWrongNotebook(request.getStudentId(), question, status);
-        updateStudyProgress(request.getStudentId(), question, status);
+        updateWrongNotebook(request.getStudentId(), question, status);  //更新错题本
+        long t4 = System.nanoTime();
+        log.info("[submitAnswer] update wrong notebook: {} ms", (t4 - stepStart) / 1_000_000);
+        stepStart = t4;
+
+        updateStudyProgress(request.getStudentId(), question, status);  //更新学习记录
+        long t5 = System.nanoTime();
+        log.info("[submitAnswer] update study progress: {} ms", (t5 - stepStart) / 1_000_000);
+
+        log.info("[submitAnswer] total: {} ms, questionId={}, studentId={}",
+                (t5 - start) / 1_000_000, request.getQuestionId(), request.getStudentId());
 
         AnswerResultDto result = new AnswerResultDto();
         result.setCorrectStatus(status);
@@ -72,7 +99,7 @@ public class AnswerServiceImpl implements AnswerService {
     }
 
     private String findCorrectOptionKey(Question question) {
-        return questionOptionMapper.findByQuestionId(question.getId()).stream()
+        return questionCacheService.getOptionsByQuestionId(question.getId()).stream()
                 .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
                 .map(QuestionOption::getOptionKey)
                 .findFirst()
@@ -80,7 +107,7 @@ public class AnswerServiceImpl implements AnswerService {
     }
 
     private CorrectStatus gradeMultipleChoice(Question question, String studentAnswer) {
-        List<String> correctKeys = questionOptionMapper.findByQuestionId(question.getId()).stream()
+        List<String> correctKeys = questionCacheService.getOptionsByQuestionId(question.getId()).stream()
                 .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
                 .map(QuestionOption::getOptionKey)
                 .map(String::toUpperCase)
@@ -104,6 +131,13 @@ public class AnswerServiceImpl implements AnswerService {
 
     private void updateWrongNotebook(Long studentId, Question question, CorrectStatus status) {
         WrongNotebook notebook = wrongNotebookMapper.findByStudentIdAndQuestionId(studentId, question.getId());
+        if (status == CorrectStatus.CORRECT) {
+            if (notebook != null) {
+                notebook.setMastered(true);
+                wrongNotebookMapper.update(notebook);
+            }
+            return;
+        }
         if (notebook == null) {
             notebook = new WrongNotebook();
             notebook.setStudentId(studentId);
@@ -111,13 +145,9 @@ public class AnswerServiceImpl implements AnswerService {
             notebook.setWrongCount(0);
             notebook.setMastered(false);
         }
-        if (status == CorrectStatus.CORRECT) {
-            notebook.setMastered(true);
-        } else {
-            notebook.setWrongCount(notebook.getWrongCount() + 1);
-            notebook.setMastered(false);
-            notebook.setLastWrongAt(LocalDateTime.now());
-        }
+        notebook.setWrongCount(notebook.getWrongCount() + 1);
+        notebook.setMastered(false);
+        notebook.setLastWrongAt(LocalDateTime.now());
         if (notebook.getId() == null) {
             wrongNotebookMapper.insert(notebook);
         } else {

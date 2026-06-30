@@ -14,7 +14,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
-      mode: always
+      mode: never
       encoding: UTF-8
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
