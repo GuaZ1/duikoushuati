@@ -11,6 +11,7 @@ import com.shuati.mapper.QuestionOptionMapper;
 import com.shuati.mapper.SubjectMapper;
 import com.shuati.service.QuestionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,6 +67,7 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"question", "questionOptions"}, key = "#id")
     public void update(Long id, QuestionDto dto) {
         Question existing = questionMapper.findById(id);
         if (existing == null) {
@@ -89,6 +91,7 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"question", "questionOptions"}, key = "#id")
     public void delete(Long id) {
         Question existing = questionMapper.findById(id);
         if (existing == null) {
