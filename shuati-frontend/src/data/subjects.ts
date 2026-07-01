@@ -1,9 +1,16 @@
 import { Subject } from '@/types';
 
+const csharpImg = require('../assets/subjects/csharp.png');
+const jichuImg = require('../assets/subjects/计算机基础.png');
+const wangluoImg = require('../assets/subjects/计算机网络.png');
+const mysqlImg = require('../assets/subjects/mysql.png');
+
 const subjects: Subject[] = [
-  { id: 1, name: '数学', code: 'math' },
-  { id: 2, name: '物理', code: 'physics' },
-  { id: 3, name: '英语', code: 'english' }
+  { id: 1, name: 'C#', code: 'csharp', image: csharpImg },
+  { id: 2, name: '计算机基础', code: 'computer-basics', image: jichuImg },
+  { id: 3, name: '计算机网络', code: 'computer-network', image: wangluoImg },
+  { id: 4, name: 'MySQL', code: 'mysql', image: mysqlImg },
+  { id: 5, name: '数学', code: 'math' }
 ];
 
 export default function getSubjectsMock(): Subject[] {
