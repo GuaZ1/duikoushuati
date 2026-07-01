@@ -13,9 +13,7 @@ import getProgressMock from '@/data/progress';
 import getWrongbookMock from '@/data/wrongbook';
 import submitAnswerMock from '@/data/answer';
 
-const BASE_URL = process.env.TARO_ENV === 'weapp'
-  ? (process.env.TARO_APP_API_URL || 'http://localhost:8080')
-  : 'http://localhost:8080';
+const BASE_URL = process.env.TARO_APP_API_URL || 'http://localhost:8080';
 
 async function request<T>(
   url: string,
