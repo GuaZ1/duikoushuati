@@ -13,6 +13,7 @@ export interface Subject {
   id: number;
   name: string;
   code: string;
+  image?: string;
 }
 
 export type QuestionType =

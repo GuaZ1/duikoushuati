@@ -1,9 +1,12 @@
-import React, { useEffect, Component } from 'react';
-import { View, Text } from '@tarojs/components';
+import React, { useEffect, useState, Component } from 'react';
+import { View, Text, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/store/user';
-import { getUserInfo } from '@/services/api';
+import { getUserInfo, getSubjects } from '@/services/api';
+import { Subject } from '@/types';
+import getSubjectsMock from '@/data/subjects';
 import StatCard from '@/components/StatCard';
+import EmptyState from '@/components/EmptyState';
 import styles from './index.module.scss';
 
 class ErrorCatcher extends Component<{ children: React.ReactNode }> {
@@ -23,15 +26,30 @@ class ErrorCatcher extends Component<{ children: React.ReactNode }> {
 
 const HomePage: React.FC = () => {
   const { user, setUser } = useUserStore();
+  const [subjects, setSubjects] = useState<Subject[]>([]);
 
   useEffect(() => {
     getUserInfo(1).then(setUser).catch((e: Error) => {
       console.log('[HomePage] getUserInfo failed:', e.message);
     });
+    getSubjects().then((res) => {
+      const mock = getSubjectsMock();
+      const base = res.length > 0 ? res : mock;
+      const imageByName = new Map(mock.map((s) => [s.name, s.image]));
+      const imageByCode = new Map(mock.map((s) => [s.code, s.image]));
+      const nameByCode = new Map(mock.map((s) => [s.code, s.name]));
+      setSubjects(
+        base.map((s) => ({
+          ...s,
+          name: nameByCode.get(s.code) || s.name,
+          image: s.image || imageByName.get(s.name) || imageByCode.get(s.code)
+        }))
+      );
+    });
   }, []);
 
-  const goBank = () => {
-    Taro.switchTab({ url: '/pages/bank/index' });
+  const goPractice = (subjectId: number) => {
+    Taro.navigateTo({ url: `/pages/question/index?subjectId=${subjectId}` });
   };
 
   return (
@@ -49,9 +67,25 @@ const HomePage: React.FC = () => {
         </View>
 
         <View className={styles.card}>
-          <Text className={styles.sectionTitle}>快速开始</Text>
-          <View className={styles.quickButton} onClick={goBank}>
-            <Text className={styles.quickText}>进入题库练习</Text>
+          <Text className={styles.sectionTitle}>选择学科</Text>
+          <View className={styles.grid}>
+            {subjects.length === 0 && <EmptyState title="暂无学科" />}
+            {subjects.map((s) => (
+              <View
+                key={s.id}
+                className={styles.subjectCard}
+                onClick={() => goPractice(s.id)}
+              >
+                {s.image ? (
+                  <Image className={styles.subjectImage} src={s.image} mode="aspectFill" />
+                ) : (
+                  <View className={styles.subjectFallback}>
+                    <Text className={styles.subjectFallbackText}>{s.name}</Text>
+                  </View>
+                )}
+                <Text className={styles.subjectName}>{s.name}</Text>
+              </View>
+            ))}
           </View>
         </View>
       </View>

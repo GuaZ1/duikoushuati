@@ -41,20 +41,54 @@
   margin-bottom: $spacing-md;
 }
 
-.quickButton {
-  @include button-reset;
-  width: 100%;
-  height: $button-height-md;
-  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
-  border-radius: $radius-button;
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 calc(-1 * $spacing-sm);
+}
+
+.subjectCard {
+  width: calc(50% - #{$spacing-lg});
+  margin: $spacing-sm;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  box-shadow: $shadow-card;
+  box-sizing: border-box;
+  transition: all $transition-base;
 
   &:active {
-    opacity: 0.9;
     transform: scale(0.98);
+    box-shadow: $shadow-card-hover;
   }
 }
 
-.quickText {
-  font-size: $font-size-md;
+.subjectImage {
+  display: block;
+  width: 100%;
+  height: 160rpx;
+  margin-bottom: $spacing-sm;
+}
+
+.subjectFallback {
+  @include flex-center;
+  width: 100%;
+  height: 160rpx;
+  margin-bottom: $spacing-sm;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-md;
+}
+
+.subjectFallbackText {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
   color: $color-text-white;
+}
+
+.subjectName {
+  display: block;
+  text-align: center;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
 }

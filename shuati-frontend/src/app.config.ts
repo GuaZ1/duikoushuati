@@ -22,7 +22,6 @@ export default defineAppConfig({
     borderStyle: 'black',
     list: [
       { pagePath: 'pages/home/index', text: '首页' },
-      { pagePath: 'pages/bank/index', text: '题库' },
       { pagePath: 'pages/teacher/question/index', text: '教师' },
       { pagePath: 'pages/mine/index', text: '我的' }
     ]
