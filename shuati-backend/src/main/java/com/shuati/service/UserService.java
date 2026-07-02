@@ -1,6 +1,7 @@
 package com.shuati.service;
 
 import com.shuati.dto.ProgressDto;
+import com.shuati.dto.UserStatisticsDto;
 import com.shuati.dto.WrongNotebookDto;
 import com.shuati.entity.User;
 
@@ -13,4 +14,6 @@ public interface UserService {
     List<ProgressDto> progress(Long userId, Long subjectId);
 
     List<WrongNotebookDto> wrongBook(Long userId);
+
+    UserStatisticsDto statistics(Long userId);
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from '@tarojs/components';
-import { getWrongbook } from '@/services/api';
+import { getMyWrongbook } from '@/services/api';
 import { WrongNotebookItem } from '@/types';
 import styles from './index.module.scss';
 
@@ -8,7 +8,7 @@ const WrongbookPage: React.FC = () => {
   const [list, setList] = useState<WrongNotebookItem[]>([]);
 
   useEffect(() => {
-    getWrongbook(1).then(setList);
+    getMyWrongbook().then(setList);
   }, []);
 
   return (

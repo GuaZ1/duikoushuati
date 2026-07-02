@@ -7,9 +7,6 @@ import lombok.Data;
 public class AnswerRequest {
 
     @NotNull
-    private Long studentId;
-
-    @NotNull
     private Long questionId;
 
     private String answer;

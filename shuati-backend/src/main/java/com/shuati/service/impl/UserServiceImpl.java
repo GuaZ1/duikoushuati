@@ -1,6 +1,7 @@
 package com.shuati.service.impl;
 
 import com.shuati.dto.ProgressDto;
+import com.shuati.dto.UserStatisticsDto;
 import com.shuati.dto.WrongNotebookDto;
 import com.shuati.entity.KnowledgePoint;
 import com.shuati.entity.Question;
@@ -11,6 +12,7 @@ import com.shuati.mapper.KnowledgePointMapper;
 import com.shuati.mapper.QuestionMapper;
 import com.shuati.mapper.StudyProgressMapper;
 import com.shuati.mapper.SubjectMapper;
+import com.shuati.mapper.AnswerRecordMapper;
 import com.shuati.mapper.UserMapper;
 import com.shuati.mapper.WrongNotebookMapper;
 import com.shuati.service.UserService;
@@ -31,6 +33,7 @@ public class UserServiceImpl implements UserService {
     private final SubjectMapper subjectMapper;
     private final KnowledgePointMapper knowledgePointMapper;
     private final QuestionMapper questionMapper;
+    private final AnswerRecordMapper answerRecordMapper;
 
     @Override
     public User info(Long id) {
@@ -56,8 +59,10 @@ public class UserServiceImpl implements UserService {
         Map<Long, String> subjectMap = subjectMapper.findAll().stream()
                 .filter(s -> subjectIds.contains(s.getId()))
                 .collect(Collectors.toMap(Subject::getId, Subject::getName));
-        Map<Long, String> kpMap = knowledgePointMapper.findByIds(kpIds).stream()
-                .collect(Collectors.toMap(KnowledgePoint::getId, KnowledgePoint::getName));
+        Map<Long, String> kpMap = kpIds.isEmpty()
+                ? Map.of()
+                : knowledgePointMapper.findByIds(kpIds).stream()
+                        .collect(Collectors.toMap(KnowledgePoint::getId, KnowledgePoint::getName));
 
         return list.stream().map(p -> {
             ProgressDto dto = new ProgressDto();
@@ -96,5 +101,16 @@ public class UserServiceImpl implements UserService {
             dto.setMastered(n.getMastered());
             return dto;
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public UserStatisticsDto statistics(Long userId) {
+        int total = answerRecordMapper.countTotalByStudentId(userId);
+        int correct = total > 0 ? answerRecordMapper.countCorrectByStudentId(userId) : 0;
+        UserStatisticsDto dto = new UserStatisticsDto();
+        dto.setTodayCount(answerRecordMapper.countTodayByStudentId(userId));
+        dto.setTotalCount(total);
+        dto.setCorrectRate(total > 0 ? Math.round((correct * 100f) / total) : 0);
+        return dto;
     }
 }

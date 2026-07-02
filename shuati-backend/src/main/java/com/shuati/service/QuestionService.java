@@ -1,5 +1,6 @@
 package com.shuati.service;
 
+import com.shuati.dto.PracticeQuestionDto;
 import com.shuati.dto.QuestionDto;
 import com.shuati.enums.QuestionType;
 
@@ -8,6 +9,8 @@ import java.util.List;
 public interface QuestionService {
 
     List<QuestionDto> list(Long subjectId, Integer difficulty, QuestionType type);
+
+    List<PracticeQuestionDto> listForPractice(Long subjectId, Integer difficulty, QuestionType type);
 
     QuestionDto detail(Long id);
 

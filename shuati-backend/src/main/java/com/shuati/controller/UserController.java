@@ -1,7 +1,9 @@
 package com.shuati.controller;
 
+import com.shuati.context.UserContext;
 import com.shuati.dto.ApiResult;
 import com.shuati.dto.ProgressDto;
+import com.shuati.dto.UserStatisticsDto;
 import com.shuati.dto.WrongNotebookDto;
 import com.shuati.entity.User;
 import com.shuati.service.UserService;
@@ -20,6 +22,26 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+
+    @GetMapping("/me")
+    public ApiResult<User> me() {
+        return ApiResult.ok(UserContext.get());
+    }
+
+    @GetMapping("/me/progress")
+    public ApiResult<List<ProgressDto>> myProgress(@RequestParam(required = false) Long subjectId) {
+        return ApiResult.ok(userService.progress(UserContext.getUserId(), subjectId));
+    }
+
+    @GetMapping("/me/wrongbook")
+    public ApiResult<List<WrongNotebookDto>> myWrongBook() {
+        return ApiResult.ok(userService.wrongBook(UserContext.getUserId()));
+    }
+
+    @GetMapping("/me/statistics")
+    public ApiResult<UserStatisticsDto> myStatistics() {
+        return ApiResult.ok(userService.statistics(UserContext.getUserId()));
+    }
 
     @GetMapping("/{id}")
     public ApiResult<User> info(@PathVariable Long id) {

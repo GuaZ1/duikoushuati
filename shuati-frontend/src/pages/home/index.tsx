@@ -2,8 +2,8 @@ import React, { useEffect, useState, Component } from 'react';
 import { View, Text, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/store/user';
-import { getUserInfo, getSubjects } from '@/services/api';
-import { Subject } from '@/types';
+import { getCurrentUser, getMyStatistics, getSubjects } from '@/services/api';
+import { Subject, UserStatistics } from '@/types';
 import getSubjectsMock from '@/data/subjects';
 import StatCard from '@/components/StatCard';
 import EmptyState from '@/components/EmptyState';
@@ -27,11 +27,17 @@ class ErrorCatcher extends Component<{ children: React.ReactNode }> {
 const HomePage: React.FC = () => {
   const { user, setUser } = useUserStore();
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [stats, setStats] = useState<UserStatistics>({ todayCount: 0, totalCount: 0, correctRate: 0 });
 
   useEffect(() => {
-    getUserInfo(1).then(setUser).catch((e: Error) => {
-      console.log('[HomePage] getUserInfo failed:', e.message);
+    getCurrentUser().then(setUser).catch((e: Error) => {
+      console.log('[HomePage] getCurrentUser failed:', e.message);
     });
+    getMyStatistics()
+      .then(setStats)
+      .catch((e: Error) => {
+        console.log('[HomePage] getMyStatistics failed:', e.message);
+      });
     getSubjects().then((res) => {
       const mock = getSubjectsMock();
       const base = res.length > 0 ? res : mock;
@@ -61,9 +67,8 @@ const HomePage: React.FC = () => {
         </View>
 
         <View className={styles.stats}>
-          <StatCard title="今日练习" value="3" color="primary" />
-          <StatCard title="累计答题" value="26" color="success" />
-          <StatCard title="正确率" value="73%" color="warning" />
+          <StatCard title="今日练习" value={stats.todayCount} color="primary" />
+          <StatCard title="累计答题" value={stats.totalCount} color="success" />
         </View>
 
         <View className={styles.card}>

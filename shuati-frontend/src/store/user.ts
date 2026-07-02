@@ -1,12 +1,28 @@
+import Taro from '@tarojs/taro';
 import { create } from 'zustand';
 import { User } from '@/types';
 
+const storedUser = Taro.getStorageSync<User | null>('user') || null;
+
 interface UserState {
   user: User | null;
-  setUser: (user: User) => void;
+  setUser: (user: User | null) => void;
+  logout: () => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
-  user: null,
-  setUser: (user) => set({ user })
+  user: storedUser,
+  setUser: (user) => {
+    if (user) {
+      Taro.setStorageSync('user', user);
+    } else {
+      Taro.removeStorageSync('user');
+    }
+    set({ user });
+  },
+  logout: () => {
+    Taro.removeStorageSync('token');
+    Taro.removeStorageSync('user');
+    set({ user: null });
+  }
 }));

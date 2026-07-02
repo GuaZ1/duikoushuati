@@ -7,7 +7,9 @@ export default defineAppConfig({
     'pages/result/index',
     'pages/wrongbook/index',
     'pages/teacher/question/index',
-    'pages/teacher/question/form'
+    'pages/teacher/question/form',
+    'pages/login/index',
+    'pages/privacy/index'
   ],
   window: {
     backgroundTextStyle: 'light',
@@ -16,6 +18,7 @@ export default defineAppConfig({
     navigationBarTextStyle: 'black'
   },
   tabBar: {
+    custom: true,
     color: '#86909C',
     selectedColor: '#2563EB',
     backgroundColor: '#ffffff',

@@ -1,8 +1,10 @@
 package com.shuati.service.impl;
 
+import com.shuati.entity.AnswerRecord;
 import com.shuati.entity.StudyProgress;
 import com.shuati.entity.WrongNotebook;
 import com.shuati.enums.CorrectStatus;
+import com.shuati.mapper.AnswerRecordMapper;
 import com.shuati.mapper.StudyProgressMapper;
 import com.shuati.mapper.WrongNotebookMapper;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,22 @@ public class AsyncAnswerService {
 
     private final WrongNotebookMapper wrongNotebookMapper;
     private final StudyProgressMapper studyProgressMapper;
+    private final AnswerRecordMapper answerRecordMapper;
+
+    @Async("answerAsyncExecutor")
+    @Transactional
+    public void insertAnswerRecord(AnswerRecord record) {
+        long start = System.nanoTime();
+        try {
+            answerRecordMapper.insert(record);
+        } catch (Exception e) {
+            log.error("[async insertAnswerRecord] failed, studentId={}, questionId={}",
+                    record.getStudentId(), record.getQuestionId(), e);
+        } finally {
+            log.info("[async insertAnswerRecord] {} ms, studentId={}, questionId={}",
+                    (System.nanoTime() - start) / 1_000_000, record.getStudentId(), record.getQuestionId());
+        }
+    }
 
     @Async("answerAsyncExecutor")
     @Transactional

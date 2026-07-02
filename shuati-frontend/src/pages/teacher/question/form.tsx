@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Input, Textarea, Picker } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { Question, QuestionOption, Subject } from '@/types';
+import { useUserStore } from '@/store/user';
 import {
   createQuestion,
   getQuestionDetail,
@@ -51,6 +52,7 @@ const buildOptionsFromAnswer = (
 };
 
 const QuestionFormPage: React.FC = () => {
+  const { user } = useUserStore();
   const id = Number(Taro.getCurrentInstance().router?.params?.id);
   const isEdit = !!id;
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -69,6 +71,11 @@ const QuestionFormPage: React.FC = () => {
   });
 
   useEffect(() => {
+    if (!user || user.role !== 'TEACHER') {
+      Taro.showToast({ title: '无教师权限', icon: 'none' });
+      setTimeout(() => Taro.navigateBack(), 1500);
+      return;
+    }
     getSubjects().then(setSubjects);
     if (isEdit) {
       getQuestionDetail(id).then((q) => {

@@ -28,12 +28,17 @@ CREATE TABLE knowledge_point (
 CREATE TABLE app_user (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     role VARCHAR(20) NOT NULL,
+    openid VARCHAR(64),
     phone VARCHAR(20),
     nickname VARCHAR(50),
     avatar VARCHAR(255),
     grade VARCHAR(20),
     school VARCHAR(100),
-    created_at DATETIME
+    token VARCHAR(64),
+    token_expire_at DATETIME,
+    created_at DATETIME,
+    UNIQUE KEY uk_openid (openid),
+    KEY idx_token (token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE question (
