@@ -29,7 +29,7 @@ public class AuthService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Transactional
-    public LoginResponse loginByWeChat(String code) {
+    public LoginResponse loginByWeChat(String code, String nickname, String avatarUrl) {
         if (weChatProperties.getAppid() == null || weChatProperties.getAppid().isBlank()
                 || weChatProperties.getSecret() == null || weChatProperties.getSecret().isBlank()) {
             throw new IllegalStateException("微信 AppID 或 Secret 未配置");
@@ -69,9 +69,17 @@ public class AuthService {
             user = new User();
             user.setRole(UserRole.STUDENT);
             user.setOpenid(session.getOpenid());
-            user.setNickname("微信用户");
+            user.setNickname(defaultIfBlank(nickname, "微信用户"));
+            user.setAvatar(avatarUrl);
             user.setCreatedAt(LocalDateTime.now());
             userMapper.insert(user);
+        } else {
+            if (nickname != null && !nickname.isBlank()) {
+                user.setNickname(nickname);
+            }
+            if (avatarUrl != null && !avatarUrl.isBlank()) {
+                user.setAvatar(avatarUrl);
+            }
         }
 
         String token = UUID.randomUUID().toString().replace("-", "");
@@ -82,5 +90,9 @@ public class AuthService {
 
         long expiresInSeconds = TOKEN_EXPIRE_DAYS * 24 * 60 * 60;
         return new LoginResponse(token, expiresInSeconds, user);
+    }
+
+    private String defaultIfBlank(String value, String defaultValue) {
+        return value != null && !value.isBlank() ? value : defaultValue;
     }
 }

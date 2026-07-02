@@ -15,7 +15,7 @@ import getProgressMock from '@/data/progress';
 import getWrongbookMock from '@/data/wrongbook';
 import submitAnswerMock from '@/data/answer';
 
-const BASE_URL = process.env.TARO_APP_API_URL || 'http://localhost:8080';
+export const BASE_URL = process.env.TARO_APP_API_URL || 'http://localhost:8080';
 const IS_DEV = process.env.NODE_ENV === 'development';
 
 function getToken(): string | undefined {
@@ -70,8 +70,31 @@ async function request<T>(
   }
 }
 
-export async function loginByCode(code: string): Promise<LoginResponse> {
-  return request<LoginResponse>('/api/auth/login', 'POST', { code });
+export async function loginByCode(
+  code: string,
+  nickname?: string,
+  avatarUrl?: string
+): Promise<LoginResponse> {
+  return request<LoginResponse>('/api/auth/login', 'POST', { code, nickname, avatarUrl });
+}
+
+export async function uploadAvatar(filePath: string): Promise<string> {
+  const token = getToken();
+  const res = await Taro.uploadFile({
+    url: `${BASE_URL}/api/auth/upload/avatar`,
+    filePath,
+    name: 'file',
+    header: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+
+  if (res.statusCode !== 200) {
+    throw new Error('头像上传失败');
+  }
+  const result = JSON.parse(res.data) as { code: number; message: string; data: string };
+  if (result.code !== 0) {
+    throw new Error(result.message || '头像上传失败');
+  }
+  return result.data;
 }
 
 export async function getCurrentUser(): Promise<User> {
