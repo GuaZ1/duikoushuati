@@ -22,6 +22,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResult<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
-        return ApiResult.ok(authService.loginByWeChat(request.getCode()));
+        return ApiResult.ok(authService.loginByWeChat(request.getCode(), request.getNickname(), request.getAvatarUrl()));
     }
 }
