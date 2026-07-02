@@ -3,12 +3,14 @@ import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import { AnswerResult, Question } from '@/types';
-import { getQuestions, submitAnswer } from '@/services/api';
+import { useUserStore } from '@/store/user';
+import { getPracticeQuestions, submitAnswer } from '@/services/api';
 import EmptyState from '@/components/EmptyState';
 import ResultDialog from '@/components/ResultDialog';
 import styles from './index.module.scss';
 
 const QuestionPage: React.FC = () => {
+  const { user } = useUserStore();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState<string>('');
@@ -16,6 +18,12 @@ const QuestionPage: React.FC = () => {
   const [correctCount, setCorrectCount] = useState(0);
   const [subjectName, setSubjectName] = useState('');
   const [showDialog, setShowDialog] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      Taro.redirectTo({ url: '/pages/login/index' });
+    }
+  }, [user]);
 
   useEffect(() => {
     const subjectId = Taro.getCurrentInstance().router?.params?.subjectId;
@@ -26,7 +34,7 @@ const QuestionPage: React.FC = () => {
 
   const loadQuestions = async (subjectId: number) => {
     try {
-      const list = await getQuestions({ subjectId });
+      const list = await getPracticeQuestions({ subjectId });
       setQuestions(list);
       if (list.length > 0) {
         setSubjectName(list[0].subjectName);
@@ -43,7 +51,7 @@ const QuestionPage: React.FC = () => {
     if (!question || result) return;
     setSelected(optionKey);
     try {
-      const res = await submitAnswer(1, question.id, optionKey);
+      const res = await submitAnswer(question.id, optionKey);
       setResult(res);
       if (res.correctStatus === 'CORRECT') {
         setCorrectCount((prev) => prev + 1);

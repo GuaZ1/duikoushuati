@@ -15,4 +15,13 @@ public interface AnswerRecordMapper {
 
     @Select("SELECT * FROM answer_record WHERE student_id = #{studentId} ORDER BY created_at DESC")
     List<AnswerRecord> findByStudentId(Long studentId);
+
+    @Select("SELECT COUNT(*) FROM answer_record WHERE student_id = #{studentId} AND DATE(created_at) = CURDATE()")
+    int countTodayByStudentId(Long studentId);
+
+    @Select("SELECT COUNT(*) FROM answer_record WHERE student_id = #{studentId}")
+    int countTotalByStudentId(Long studentId);
+
+    @Select("SELECT COUNT(*) FROM answer_record WHERE student_id = #{studentId} AND correct_status = 'CORRECT'")
+    int countCorrectByStudentId(Long studentId);
 }

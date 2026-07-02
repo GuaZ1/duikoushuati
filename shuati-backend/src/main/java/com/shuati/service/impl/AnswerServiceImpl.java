@@ -1,17 +1,18 @@
 package com.shuati.service.impl;
 
+import com.shuati.context.UserContext;
 import com.shuati.dto.AnswerRequest;
 import com.shuati.dto.AnswerResultDto;
-import com.shuati.entity.*;
+import com.shuati.entity.AnswerRecord;
+import com.shuati.entity.Question;
+import com.shuati.entity.QuestionOption;
 import com.shuati.enums.CorrectStatus;
 import com.shuati.enums.QuestionType;
-import com.shuati.mapper.*;
 import com.shuati.service.AnswerService;
 import com.shuati.service.QuestionCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,18 +25,13 @@ import java.util.stream.Collectors;
 public class AnswerServiceImpl implements AnswerService {
 
     private final QuestionCacheService questionCacheService;
-    private final AnswerRecordMapper answerRecordMapper;
     private final AsyncAnswerService asyncAnswerService;
 
     @Override
-    @Transactional
     public AnswerResultDto submitAnswer(AnswerRequest request) {
         long start = System.nanoTime();
         long stepStart = start;
-
-        Question question = questionCacheService.getQuestionById(request.getQuestionId());   //根据用户的题目id找题目
-
-
+        Question question = questionCacheService.getQuestionById(request.getQuestionId());   //根据题目id找题目
         long t1 = System.nanoTime();
         log.info("[submitAnswer] query question: {} ms", (t1 - stepStart) / 1_000_000);
         stepStart = t1;
@@ -43,37 +39,38 @@ public class AnswerServiceImpl implements AnswerService {
         if (question == null) {
             throw new IllegalArgumentException("题目不存在");
         }
-
         CorrectStatus status = grade(question, request.getAnswer());    //判断对错
         long t2 = System.nanoTime();
         log.info("[submitAnswer] grade: {} ms", (t2 - stepStart) / 1_000_000);
         stepStart = t2;
 
+        Long studentId = UserContext.getUserId();
         AnswerRecord record = new AnswerRecord();
-        record.setStudentId(request.getStudentId());
+        record.setStudentId(studentId);
         record.setQuestionId(question.getId());
         record.setStudentAnswer(request.getAnswer());
         record.setCorrectStatus(status);
-        record.setScore(status == CorrectStatus.CORRECT ? question.getScore() : 0);
-        answerRecordMapper.insert(record);                              //插入答题记录
+        int score = status == CorrectStatus.CORRECT ? question.getScore() : 0;
+        record.setScore(score);
+        asyncAnswerService.insertAnswerRecord(record);
         long t3 = System.nanoTime();
-        log.info("[submitAnswer] insert answer record: {} ms", (t3 - stepStart) / 1_000_000);
+        log.info("[submitAnswer] insert answer record (async): {} ms", (t3 - stepStart) / 1_000_000);
         stepStart = t3;
 
-        asyncAnswerService.updateWrongNotebook(request.getStudentId(), question.getId(), status);
+        asyncAnswerService.updateWrongNotebook(studentId, question.getId(), status);
         asyncAnswerService.updateStudyProgress(
-                request.getStudentId(), question.getSubjectId(), question.getKnowledgePointIds(), status);
+                studentId, question.getSubjectId(), question.getKnowledgePointIds(), status);
         long t4 = System.nanoTime();
         log.info("[submitAnswer] trigger async tasks: {} ms", (t4 - stepStart) / 1_000_000);
 
         log.info("[submitAnswer] total: {} ms, questionId={}, studentId={}",
-                (t4 - start) / 1_000_000, request.getQuestionId(), request.getStudentId());
+                (t4 - start) / 1_000_000, request.getQuestionId(), studentId);
 
         AnswerResultDto result = new AnswerResultDto();
         result.setCorrectStatus(status);
         result.setCorrectAnswer(question.getAnswer());
         result.setAnalysis(question.getAnalysis());
-        result.setScore(record.getScore());
+        result.setScore(score);
         return result;
     }
 

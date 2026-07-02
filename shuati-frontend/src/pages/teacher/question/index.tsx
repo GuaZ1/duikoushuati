@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { Question, Subject } from '@/types';
+import { useUserStore } from '@/store/user';
 import {
   deleteQuestion,
   getQuestions,
@@ -11,9 +12,17 @@ import EmptyState from '@/components/EmptyState';
 import styles from './index.module.scss';
 
 const TeacherQuestionPage: React.FC = () => {
+  const { user } = useUserStore();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [subjectId, setSubjectId] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!user || user.role !== 'TEACHER') {
+      Taro.showToast({ title: '无教师权限', icon: 'none' });
+      setTimeout(() => Taro.switchTab({ url: '/pages/home/index' }), 1500);
+    }
+  }, [user]);
 
   useEffect(() => {
     getSubjects().then(setSubjects);

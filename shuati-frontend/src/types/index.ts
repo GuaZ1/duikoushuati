@@ -70,3 +70,15 @@ export interface WrongNotebookItem {
   wrongCount: number;
   mastered: boolean;
 }
+
+export interface LoginResponse {
+  token: string;
+  expiresIn: number;
+  user: User;
+}
+
+export interface UserStatistics {
+  todayCount: number;
+  totalCount: number;
+  correctRate: number;
+}
