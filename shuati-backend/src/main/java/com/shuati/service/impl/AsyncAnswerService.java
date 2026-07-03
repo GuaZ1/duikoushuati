@@ -2,10 +2,12 @@ package com.shuati.service.impl;
 
 import com.shuati.entity.AnswerRecord;
 import com.shuati.entity.StudyProgress;
+import com.shuati.entity.UserLastPractice;
 import com.shuati.entity.WrongNotebook;
 import com.shuati.enums.CorrectStatus;
 import com.shuati.mapper.AnswerRecordMapper;
 import com.shuati.mapper.StudyProgressMapper;
+import com.shuati.mapper.UserLastPracticeMapper;
 import com.shuati.mapper.WrongNotebookMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ public class AsyncAnswerService {
     private final WrongNotebookMapper wrongNotebookMapper;
     private final StudyProgressMapper studyProgressMapper;
     private final AnswerRecordMapper answerRecordMapper;
+    private final UserLastPracticeMapper userLastPracticeMapper;
 
     @Async("answerAsyncExecutor")
     @Transactional
@@ -122,6 +125,36 @@ public class AsyncAnswerService {
                     userId, subjectId, knowledgePointIds, e);
         } finally {
             log.info("[async updateStudyProgress] {} ms, userId={}, subjectId={}",
+                    (System.nanoTime() - start) / 1_000_000, userId, subjectId);
+        }
+    }
+
+    @Async("answerAsyncExecutor")
+    @Transactional
+    public void updateLastPracticePosition(Long userId, Long subjectId, Long questionId) {
+        long start = System.nanoTime();
+        try {
+            if (userId == null || subjectId == null || questionId == null) {
+                return;
+            }
+            UserLastPractice position = userLastPracticeMapper.findByUserIdAndSubjectId(userId, subjectId);
+            if (position == null) {
+                position = new UserLastPractice();
+                position.setUserId(userId);
+                position.setSubjectId(subjectId);
+            }
+            position.setQuestionId(questionId);
+            position.setLastPracticeAt(LocalDateTime.now());
+            if (position.getId() == null) {
+                userLastPracticeMapper.insert(position);
+            } else {
+                userLastPracticeMapper.update(position);
+            }
+        } catch (Exception e) {
+            log.error("[async updateLastPracticePosition] failed, userId={}, subjectId={}, questionId={}",
+                    userId, subjectId, questionId, e);
+        } finally {
+            log.info("[async updateLastPracticePosition] {} ms, userId={}, subjectId={}",
                     (System.nanoTime() - start) / 1_000_000, userId, subjectId);
         }
     }

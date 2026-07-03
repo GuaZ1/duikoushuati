@@ -60,6 +60,7 @@ public class AnswerServiceImpl implements AnswerService {
         asyncAnswerService.updateWrongNotebook(studentId, question.getId(), status);
         asyncAnswerService.updateStudyProgress(
                 studentId, question.getSubjectId(), question.getKnowledgePointIds(), status);
+        asyncAnswerService.updateLastPracticePosition(studentId, question.getSubjectId(), question.getId());
         long t4 = System.nanoTime();
         log.info("[submitAnswer] trigger async tasks: {} ms", (t4 - stepStart) / 1_000_000);
 

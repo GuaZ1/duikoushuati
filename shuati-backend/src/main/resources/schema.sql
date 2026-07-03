@@ -3,6 +3,7 @@ USE shuati;
 
 DROP TABLE IF EXISTS answer_record;
 DROP TABLE IF EXISTS wrong_notebook;
+DROP TABLE IF EXISTS user_last_practice;
 DROP TABLE IF EXISTS study_progress;
 DROP TABLE IF EXISTS question_option;
 DROP TABLE IF EXISTS question;
@@ -91,4 +92,14 @@ CREATE TABLE study_progress (
     correct_count INT,
     mastery_rate INT,
     UNIQUE KEY uk_user_subject_kp (user_id, subject_id, knowledge_point_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE user_last_practice (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    subject_id BIGINT NOT NULL,
+    question_id BIGINT NOT NULL,
+    last_practice_at DATETIME NOT NULL,
+    UNIQUE KEY uk_user_subject (user_id, subject_id),
+    KEY idx_user_time (user_id, last_practice_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

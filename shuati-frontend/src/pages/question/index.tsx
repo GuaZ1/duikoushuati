@@ -26,18 +26,26 @@ const QuestionPage: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    const subjectId = Taro.getCurrentInstance().router?.params?.subjectId;
+    const params = Taro.getCurrentInstance().router?.params;
+    const subjectId = params?.subjectId;
+    const questionId = params?.questionId;
     if (subjectId) {
-      loadQuestions(Number(subjectId));
+      loadQuestions(Number(subjectId), questionId ? Number(questionId) : undefined);
     }
   }, []);
 
-  const loadQuestions = async (subjectId: number) => {
+  const loadQuestions = async (subjectId: number, questionId?: number) => {
     try {
       const list = await getPracticeQuestions({ subjectId });
       setQuestions(list);
       if (list.length > 0) {
         setSubjectName(list[0].subjectName);
+      }
+      if (questionId && list.length > 0) {
+        const index = list.findIndex((q) => q.id === questionId);
+        if (index >= 0) {
+          setCurrentIndex(Math.min(index + 1, list.length - 1));
+        }
       }
     } catch (e) {
       console.error(e);

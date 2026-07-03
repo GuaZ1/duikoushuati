@@ -1,9 +1,9 @@
 import React, { useEffect, useState, Component } from 'react';
 import { View, Text, Image } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useDidShow } from '@tarojs/taro';
 import { useUserStore } from '@/store/user';
-import { getCurrentUser, getMyStatistics, getSubjects } from '@/services/api';
-import { Subject, UserStatistics } from '@/types';
+import { getCurrentUser, getLastPracticePosition, getMyStatistics, getSubjects } from '@/services/api';
+import { LastPracticePosition, Subject, UserStatistics } from '@/types';
 import getSubjectsMock from '@/data/subjects';
 import StatCard from '@/components/StatCard';
 import EmptyState from '@/components/EmptyState';
@@ -28,6 +28,15 @@ const HomePage: React.FC = () => {
   const { user, setUser } = useUserStore();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [stats, setStats] = useState<UserStatistics>({ todayCount: 0, totalCount: 0, correctRate: 0 });
+  const [lastPosition, setLastPosition] = useState<LastPracticePosition | null>(null);
+
+  const fetchLastPosition = () => {
+    getLastPracticePosition()
+      .then(setLastPosition)
+      .catch((e: Error) => {
+        console.log('[HomePage] getLastPracticePosition failed:', e.message);
+      });
+  };
 
   useEffect(() => {
     getCurrentUser().then(setUser).catch((e: Error) => {
@@ -38,6 +47,7 @@ const HomePage: React.FC = () => {
       .catch((e: Error) => {
         console.log('[HomePage] getMyStatistics failed:', e.message);
       });
+    fetchLastPosition();
     getSubjects().then((res) => {
       const mock = getSubjectsMock();
       const base = res.length > 0 ? res : mock;
@@ -54,8 +64,19 @@ const HomePage: React.FC = () => {
     });
   }, []);
 
+  useDidShow(() => {
+    fetchLastPosition();
+  });
+
   const goPractice = (subjectId: number) => {
     Taro.navigateTo({ url: `/pages/question/index?subjectId=${subjectId}` });
+  };
+
+  const resumePractice = () => {
+    if (!lastPosition) return;
+    Taro.navigateTo({
+      url: `/pages/question/index?subjectId=${lastPosition.subjectId}&questionId=${lastPosition.questionId}`
+    });
   };
 
   return (
@@ -70,6 +91,20 @@ const HomePage: React.FC = () => {
           <StatCard title="今日练习" value={stats.todayCount} color="primary" />
           <StatCard title="累计答题" value={stats.totalCount} color="success" />
         </View>
+
+        {lastPosition && (
+          <View className={styles.resumeCard} onClick={resumePractice}>
+            <View className={styles.resumeInfo}>
+              <Text className={styles.resumeTitle}>回到上次刷题的位置</Text>
+              <Text className={styles.resumeSub}>
+                {lastPosition.valid
+                  ? `继续刷 ${lastPosition.subjectName}`
+                  : '题目已失效，点击重新选择'}
+              </Text>
+            </View>
+            <Text className={styles.resumeArrow}>›</Text>
+          </View>
+        )}
 
         <View className={styles.card}>
           <Text className={styles.sectionTitle}>选择学科</Text>
