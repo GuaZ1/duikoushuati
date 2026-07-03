@@ -2,6 +2,7 @@ import Taro from '@tarojs/taro';
 import {
   AnswerResult,
       LoginResponse,
+  LastPracticePosition,
   ProgressItem,
   Question,
   Subject,
@@ -168,6 +169,10 @@ export async function getMyProgress(): Promise<ProgressItem[]> {
 
 export async function getMyStatistics(): Promise<UserStatistics> {
   return request<UserStatistics>('/api/users/me/statistics');
+}
+
+export async function getLastPracticePosition(): Promise<LastPracticePosition | null> {
+  return request<LastPracticePosition | null>('/api/practice/last-position');
 }
 
 export async function getMyWrongbook(): Promise<WrongNotebookItem[]> {

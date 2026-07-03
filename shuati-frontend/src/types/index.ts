@@ -82,3 +82,11 @@ export interface UserStatistics {
   totalCount: number;
   correctRate: number;
 }
+
+export interface LastPracticePosition {
+  subjectId: number;
+  subjectName: string;
+  questionId: number;
+  lastPracticeAt: string;
+  valid: boolean;
+}
