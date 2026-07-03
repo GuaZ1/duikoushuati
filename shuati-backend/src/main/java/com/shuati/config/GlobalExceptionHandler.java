@@ -2,8 +2,10 @@ package com.shuati.config;
 
 import com.shuati.dto.ApiResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -19,6 +21,12 @@ public class GlobalExceptionHandler {
     public ApiResult<Void> handleIllegalState(IllegalStateException e) {
         log.warn("权限或状态异常: {}", e.getMessage());
         return ApiResult.fail(e.getMessage());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Void> handleNoResourceFound(NoResourceFoundException e) {
+        log.debug("静态资源不存在: {}", e.getResourcePath());
+        return ResponseEntity.notFound().build();
     }
 
     @ExceptionHandler(Exception.class)
