@@ -6,11 +6,9 @@ COPY src/ src/
 RUN mvn package -DskipTests -B
 
 FROM eclipse-temurin:17-jre-alpine
-RUN addgroup -g 1000 appgroup && adduser -u 1000 -G appgroup -D appuser
 WORKDIR /app
-RUN mkdir -p /app/uploads/avatars && chown -R appuser:appgroup /app
+RUN mkdir -p /app/uploads/avatars
 COPY --from=build /build/target/*.jar /app/shuati-backend.jar
-USER appuser
-EXPOSE 8080
+EXPOSE 80
 ENV SPRING_PROFILES_ACTIVE=prod
 ENTRYPOINT ["java", "-Duser.timezone=Asia/Shanghai", "-jar", "/app/shuati-backend.jar"]
