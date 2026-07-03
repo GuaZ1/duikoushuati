@@ -19,7 +19,7 @@
     "useCompilerModule": true,
     "lazyloadPlaceholderEnable": false,
     "uglifyFileName": false,
-    "uploadWithSourceMap": true,
+    "uploadWithSourceMap": false,
     "useMultiFrameRuntime": true,
     "packNpmManually": false,
     "packNpmRelationList": [],
@@ -44,7 +44,12 @@
   "libVersion": "3.15.2",
   "srcMiniprogramRoot": "dist/",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "value": ".map",
+        "type": "suffix"
+      }
+    ],
     "include": []
   },
   "editorSetting": {
