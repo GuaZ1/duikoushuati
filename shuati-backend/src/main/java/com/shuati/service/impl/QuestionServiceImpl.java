@@ -129,7 +129,7 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "practiceQuestions", allEntries = true)
+    @CacheEvict(value = {"question", "questionOptions", "practiceQuestions"}, allEntries = true)
     public Long create(QuestionDto dto) {
         Question question = new Question();
         question.setSubjectId(dto.getSubjectId());
