@@ -84,10 +84,10 @@ public class UserServiceImpl implements UserService {
                 .map(WrongNotebook::getQuestionId)
                 .distinct()
                 .collect(Collectors.toList());
-        Map<Long, Question> questionMap = questionIds.stream()
-                .map(questionMapper::findById)
-                .filter(q -> q != null)
-                .collect(Collectors.toMap(Question::getId, q -> q));
+        Map<Long, Question> questionMap = questionIds.isEmpty()
+                ? Map.of()
+                : questionMapper.findByIds(questionIds).stream()
+                        .collect(Collectors.toMap(Question::getId, q -> q));
 
         return list.stream().map(n -> {
             Question q = questionMap.get(n.getQuestionId());

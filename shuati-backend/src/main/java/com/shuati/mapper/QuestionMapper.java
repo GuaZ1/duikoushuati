@@ -13,6 +13,13 @@ public interface QuestionMapper {
     @Select("SELECT * FROM question WHERE id = #{id}")
     Question findById(Long id);
 
+    @Select("<script>SELECT * FROM question WHERE id IN " +
+            "<foreach collection='ids' item='id' open='(' separator=',' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            "</script>")
+    List<Question> findByIds(@Param("ids") List<Long> ids);
+
     @Select("<script>SELECT * FROM question " +
             "<where>" +
             "<if test='subjectId != null'>AND subject_id = #{subjectId}</if>" +
