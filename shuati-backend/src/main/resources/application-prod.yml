@@ -1,0 +1,42 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  datasource:
+    url: ${MYSQL_URL:jdbc:mysql://mysql:3306/shuati?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectionCollation=utf8mb4_unicode_ci}
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD}
+    hikari:
+      connection-timeout: 10000
+      validation-timeout: 5000
+      max-lifetime: 1800000
+      idle-timeout: 600000
+      minimum-idle: 5
+      maximum-pool-size: 20
+      leak-detection-threshold: 10000
+
+wechat:
+  appid: ${WECHAT_APPID:}
+  secret: ${WECHAT_SECRET:}
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+logging:
+  level:
+    root: INFO
+    com.shuati: ${LOG_LEVEL:INFO}
+    com.shuati.mapper: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: false
+      probes:
+        enabled: true

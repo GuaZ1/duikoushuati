@@ -22,12 +22,17 @@ build/
 .env
 .env.*
 !.env.example
+!.env.production
+
+# Docker / Production
+docker-compose.override.yml
 
 # Spring Boot 本地环境配置（example 模板除外）
 shuati-backend/src/main/resources/application-local.yml
 shuati-backend/src/main/resources/application-*.yml
 !shuati-backend/src/main/resources/application.yml
 !shuati-backend/src/main/resources/application-local.yml.example
+!shuati-backend/src/main/resources/application-prod.yml
 
 # 本地数据
 uploads/
