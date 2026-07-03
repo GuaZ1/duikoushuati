@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:80}
 
 spring:
   datasource:
@@ -37,6 +37,6 @@ management:
         include: health
   endpoint:
     health:
-      show-details: false
+      show-details: NEVER
       probes:
         enabled: true
