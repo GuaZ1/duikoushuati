@@ -22,7 +22,7 @@ public class QuestionCacheService {
         return questionMapper.findById(id);
     }
 
-    @Cacheable(value = "questionOptions", key = "#questionId")
+    @Cacheable(value = "questionOptions", key = "#questionId", unless = "#result.isEmpty()")
     public List<QuestionOption> getOptionsByQuestionId(Long questionId) {
         return questionOptionMapper.findByQuestionId(questionId);
     }

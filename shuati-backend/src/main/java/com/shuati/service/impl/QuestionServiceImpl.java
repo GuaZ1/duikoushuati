@@ -48,7 +48,8 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Cacheable(value = "practiceQuestions",
-            key = "#subjectId + '-' + (#difficulty != null ? #difficulty : '') + '-' + (#type != null ? #type : '')")
+            key = "#subjectId + '-' + (#difficulty != null ? #difficulty : '') + '-' + (#type != null ? #type : '')",
+            unless = "#result.isEmpty()")
     public List<PracticeQuestionDto> listForPractice(Long subjectId, Integer difficulty, QuestionType type) {
         List<QuestionPracticeVo> rows = questionMapper.findPracticeQuestionsByConditions(subjectId, difficulty, type);
         Map<Long, PracticeQuestionDto> questionMap = new LinkedHashMap<>();
