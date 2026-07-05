@@ -23,13 +23,13 @@ wechat:
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 logging:
   level:
     root: INFO
     com.shuati: ${LOG_LEVEL:INFO}
-    com.shuati.mapper: WARN
+    com.shuati.mapper: DEBUG
 
 management:
   endpoints:
