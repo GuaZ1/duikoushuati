@@ -70,12 +70,25 @@ async function request<T>(
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
+      // GET/DELETE 请求参数拼到 URL query string（后端 @RequestParam 从 URL 读）
+      let path = url;
+      let reqBody: string | undefined;
+      if ((method === 'GET' || method === 'DELETE') && data != null) {
+        const qs = Object.entries(data)
+          .filter(([, v]) => v != null)
+          .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+          .join('&');
+        if (qs) path = `${url}?${qs}`;
+      } else if (data != null) {
+        reqBody = JSON.stringify(data);
+      }
+
       const res = await Taro.cloud.callContainer({
         config: { env: CLOUD_ENV },
-        path: url,
+        path,
         method,
         header,
-        data: data != null ? JSON.stringify(data) : undefined,
+        data: reqBody,
       });
 
       if (res.statusCode === 401) {
@@ -83,11 +96,11 @@ async function request<T>(
         throw new Error('登录已过期');
       }
 
-      const body = parseBody<{ code: number; message: string; data: T }>(res.data);
-      if (body.code !== 0) {
-        throw new Error(body.message || '请求失败');
+      const result = parseBody<{ code: number; message: string; data: T }>(res.data);
+      if (result.code !== 0) {
+        throw new Error(result.message || '请求失败');
       }
-      return body.data;
+      return result.data;
     } catch (err: any) {
       if (err?.message === '登录已过期') throw err;
       console.warn(`[API] callContainer ${method} ${url} failed:`, err);
