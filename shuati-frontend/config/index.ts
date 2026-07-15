@@ -52,6 +52,14 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
       },
       webpackChain(chain) {
         chain.resolve.plugin('tsconfig-paths').use(TsconfigPathsPlugin);
+        try {
+          chain.optimization.minimizer('terserPlugin').tap((args) => {
+            args[0].extractComments = false;
+            return args;
+          });
+        } catch (_) {
+          // 开发模式下 terser 插件未注册，跳过
+        }
       },
     },
     h5: {

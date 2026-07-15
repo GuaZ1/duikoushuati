@@ -8,6 +8,14 @@ const PRIVACY_PATH = '/pages/privacy/index';
 
 function App(props: { children: React.ReactNode }) {
   useLaunch(() => {
+    // 微信小程序环境初始化云托管
+    if (process.env.TARO_ENV === 'weapp') {
+      Taro.cloud.init({
+        env: 'prod-d3gi3mvu1d1660fe9',
+        traceUser: true,
+      });
+    }
+
     const agreed = Taro.getStorageSync('privacyAgreed');
     const token = Taro.getStorageSync('token');
 

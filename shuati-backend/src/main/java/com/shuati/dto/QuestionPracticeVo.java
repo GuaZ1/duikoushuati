@@ -12,12 +12,7 @@ public class QuestionPracticeVo {
     private Integer difficulty;
     private String content;
     private Integer score;
-    private String answer;
-    private String analysis;
-    private String knowledgePointIds;
-    private String source;
     private Long optionId;
     private String optionKey;
     private String optionContent;
-    private Boolean isCorrect;
 }
