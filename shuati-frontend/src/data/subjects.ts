@@ -1,9 +1,9 @@
 import { Subject } from '@/types';
 
-const csharpImg = require('../assets/subjects/csharp.webp');
-const jichuImg = require('../assets/subjects/计算机基础.webp');
-const wangluoImg = require('../assets/subjects/计算机网络.webp');
-const mysqlImg = require('../assets/subjects/mysql.webp');
+const csharpImg = require('../assets/subjects/csharp.jpg');
+const jichuImg = require('../assets/subjects/计算机基础.jpg');
+const wangluoImg = require('../assets/subjects/计算机网络.jpg');
+const mysqlImg = require('../assets/subjects/mysql.jpg');
 
 const subjects: Subject[] = [
   { id: 1, name: 'C#', code: 'csharp', image: csharpImg },

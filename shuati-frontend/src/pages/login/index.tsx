@@ -74,13 +74,17 @@ const LoginPage: React.FC = () => {
 
   return (
     <View className={styles.page}>
-      <View className={styles.logo}>
-        <Text className={styles.logoText}>刷</Text>
+      {/* 顶部视觉区 */}
+      <View className={styles.hero}>
+        <View className={styles.logo}>
+          <Text className={styles.logoIcon}>✏️</Text>
+        </View>
+        <Text className={styles.title}>guazi对口刷题</Text>
+        <Text className={styles.subtitle}>完善资料，开启高效练习</Text>
       </View>
-      <Text className={styles.title}>刷题小助手</Text>
-      <Text className={styles.subtitle}>完善资料，开启高效练习</Text>
 
-      <View className={styles.form}>
+      {/* 表单卡片 */}
+      <View className={styles.formCard}>
         <Button
           className={styles.avatarButton}
           openType="chooseAvatar"
@@ -90,7 +94,10 @@ const LoginPage: React.FC = () => {
           {avatarPath ? (
             <Image className={styles.avatarPreview} src={avatarPath} mode="aspectFill" />
           ) : (
-            <Text className={styles.avatarPlaceholder}>点击选择头像</Text>
+            <View className={styles.avatarPlaceholder}>
+              <Text className={styles.avatarPlaceholderIcon}>👤</Text>
+              <Text className={styles.avatarPlaceholderText}>选择头像</Text>
+            </View>
           )}
         </Button>
 
@@ -114,6 +121,8 @@ const LoginPage: React.FC = () => {
           微信一键登录
         </Button>
       </View>
+
+
     </View>
   );
 };

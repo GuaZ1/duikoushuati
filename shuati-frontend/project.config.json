@@ -25,7 +25,7 @@
     "packNpmRelationList": [],
     "minifyWXSS": true,
     "disableUseStrict": false,
-    "ignoreUploadUnusedFiles": true,
+    "ignoreUploadUnusedFiles": false,
     "checkInvalidKey": true,
     "babelSetting": {
       "ignore": [],
@@ -47,6 +47,10 @@
     "ignore": [
       {
         "value": ".map",
+        "type": "suffix"
+      },
+      {
+        "value": ".LICENSE.txt",
         "type": "suffix"
       }
     ],
