@@ -24,4 +24,9 @@ public class AuthController {
     public ApiResult<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
         return ApiResult.ok(authService.loginByWeChat(request.getCode(), request.getNickname(), request.getAvatarUrl()));
     }
+
+    @PostMapping("/login/h5")
+    public ApiResult<LoginResponse> loginH5(@RequestBody LoginRequest request) {
+        return ApiResult.ok(authService.loginByH5(request.getNickname(), request.getAvatarUrl()));
+    }
 }
