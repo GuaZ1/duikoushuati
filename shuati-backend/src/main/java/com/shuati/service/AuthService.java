@@ -95,4 +95,35 @@ public class AuthService {
     private String defaultIfBlank(String value, String defaultValue) {
         return value != null && !value.isBlank() ? value : defaultValue;
     }
+
+    @Transactional
+    public LoginResponse loginByH5(String nickname, String avatarUrl) {
+        String devOpenid = "h5-dev-user";
+        User user = userMapper.findByOpenid(devOpenid);
+        if (user == null) {
+            user = new User();
+            user.setRole(UserRole.STUDENT);
+            user.setOpenid(devOpenid);
+            user.setNickname(defaultIfBlank(nickname, "H5测试用户"));
+            user.setAvatar(avatarUrl);
+            user.setCreatedAt(LocalDateTime.now());
+            userMapper.insert(user);
+        } else {
+            if (nickname != null && !nickname.isBlank()) {
+                user.setNickname(nickname);
+            }
+            if (avatarUrl != null && !avatarUrl.isBlank()) {
+                user.setAvatar(avatarUrl);
+            }
+        }
+
+        String token = UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime expireAt = LocalDateTime.now().plusDays(TOKEN_EXPIRE_DAYS);
+        user.setToken(token);
+        user.setTokenExpireAt(expireAt);
+        userMapper.update(user);
+
+        long expiresInSeconds = TOKEN_EXPIRE_DAYS * 24 * 60 * 60;
+        return new LoginResponse(token, expiresInSeconds, user);
+    }
 }
