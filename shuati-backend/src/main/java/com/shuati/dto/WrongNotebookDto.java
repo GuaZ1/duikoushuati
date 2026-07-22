@@ -12,6 +12,7 @@ public class WrongNotebookDto {
     private QuestionType type;
     private Integer difficulty;
     private Integer wrongCount;
+    private Integer weight;
     private LocalDateTime lastWrongAt;
     private Boolean mastered;
 }

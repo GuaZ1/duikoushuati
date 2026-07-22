@@ -78,6 +78,7 @@ CREATE TABLE wrong_notebook (
     student_id BIGINT NOT NULL,
     question_id BIGINT NOT NULL,
     wrong_count INT,
+    weight INT DEFAULT 0,
     last_wrong_at DATETIME,
     mastered BOOLEAN,
     UNIQUE KEY uk_student_question (student_id, question_id)

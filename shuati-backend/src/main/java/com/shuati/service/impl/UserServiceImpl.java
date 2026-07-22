@@ -113,6 +113,7 @@ public class UserServiceImpl implements UserService {
             dto.setType(q != null ? q.getType() : null);
             dto.setDifficulty(q != null ? q.getDifficulty() : null);
             dto.setWrongCount(n.getWrongCount());
+            dto.setWeight(n.getWeight() == null ? 0 : n.getWeight());
             dto.setLastWrongAt(n.getLastWrongAt());
             dto.setMastered(n.getMastered());
             return dto;

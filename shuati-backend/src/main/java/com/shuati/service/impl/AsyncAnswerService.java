@@ -61,6 +61,7 @@ public class AsyncAnswerService {
                 notebook.setStudentId(studentId);
                 notebook.setQuestionId(questionId);
                 notebook.setWrongCount(0);
+                notebook.setWeight(0);
                 notebook.setMastered(false);
             }
             notebook.setWrongCount(notebook.getWrongCount() + 1);

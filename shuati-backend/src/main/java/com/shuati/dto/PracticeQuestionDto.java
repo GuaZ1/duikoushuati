@@ -15,5 +15,7 @@ public class PracticeQuestionDto {
     private Integer difficulty;
     private String content;
     private Integer score;
+    // 错题本专项练习时返回：该题当前的掌握权重（0~5），普通练习为 null
+    private Integer weight;
     private List<PracticeQuestionOptionDto> options = new ArrayList<>();
 }

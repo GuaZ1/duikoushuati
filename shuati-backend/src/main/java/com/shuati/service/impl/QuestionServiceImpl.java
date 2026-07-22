@@ -8,10 +8,12 @@ import com.shuati.dto.QuestionPracticeVo;
 import com.shuati.entity.Question;
 import com.shuati.entity.QuestionOption;
 import com.shuati.entity.Subject;
+import com.shuati.entity.WrongNotebook;
 import com.shuati.enums.QuestionType;
 import com.shuati.mapper.QuestionMapper;
 import com.shuati.mapper.QuestionOptionMapper;
 import com.shuati.mapper.SubjectMapper;
+import com.shuati.mapper.WrongNotebookMapper;
 import com.shuati.service.QuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
@@ -34,6 +36,7 @@ public class QuestionServiceImpl implements QuestionService {
     private final QuestionMapper questionMapper;
     private final QuestionOptionMapper questionOptionMapper;
     private final SubjectMapper subjectMapper;
+    private final WrongNotebookMapper wrongNotebookMapper;
     private final CacheManager cacheManager;
 
     @Override
@@ -52,6 +55,29 @@ public class QuestionServiceImpl implements QuestionService {
             unless = "#result.isEmpty()")
     public List<PracticeQuestionDto> listForPractice(Long subjectId, Integer difficulty, QuestionType type) {
         List<QuestionPracticeVo> rows = questionMapper.findPracticeQuestionsByConditions(subjectId, difficulty, type);
+        return new ArrayList<>(buildPracticeDtos(rows).values());
+    }
+
+    @Override
+    public List<PracticeQuestionDto> listWrongbookPractice(Long studentId) {
+        List<WrongNotebook> entries = wrongNotebookMapper.findByStudentIdAndMasteredFalse(studentId);
+        if (entries.isEmpty()) {
+            return List.of();
+        }
+        // 权重按 questionId 归档，供每题渲染 5 个点使用；未掌握错题不区分科目，统一混在一起练习。
+        Map<Long, Integer> weightMap = entries.stream()
+                .collect(Collectors.toMap(
+                        WrongNotebook::getQuestionId,
+                        w -> w.getWeight() == null ? 0 : w.getWeight(),
+                        (a, b) -> a));
+        List<QuestionPracticeVo> rows = questionMapper.findPracticeQuestionsByIds(new ArrayList<>(weightMap.keySet()));
+        Map<Long, PracticeQuestionDto> questionMap = buildPracticeDtos(rows);
+        questionMap.forEach((id, dto) -> dto.setWeight(weightMap.getOrDefault(id, 0)));
+        return new ArrayList<>(questionMap.values());
+    }
+
+    // 将练习题目行（题目 + 选项的笛卡尔积）聚合为 DTO，并顺带写入题目/选项缓存，供后续判题秒取。
+    private Map<Long, PracticeQuestionDto> buildPracticeDtos(List<QuestionPracticeVo> rows) {
         Map<Long, PracticeQuestionDto> questionMap = new LinkedHashMap<>();
         Map<Long, List<QuestionOption>> optionMap = new LinkedHashMap<>();
         Map<Long, Question> questionCacheMap = new LinkedHashMap<>();
@@ -90,7 +116,7 @@ public class QuestionServiceImpl implements QuestionService {
             optionMap.forEach(optionsCache::put);
         }
 
-        return new ArrayList<>(questionMap.values());
+        return questionMap;
     }
 
     private Question buildQuestion(QuestionPracticeVo row) {
