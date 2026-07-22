@@ -45,6 +45,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User updateProfile(Long userId, String nickname, String avatar) {
+        User user = userMapper.findById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        if (nickname != null && !nickname.isBlank()) {
+            user.setNickname(nickname);
+        }
+        if (avatar != null && !avatar.isBlank()) {
+            user.setAvatar(avatar);
+        }
+        userMapper.updateProfile(userId, user.getNickname(), user.getAvatar());
+        return user;
+    }
+
+    @Override
     public List<ProgressDto> progress(Long userId, Long subjectId) {
         List<com.shuati.entity.StudyProgress> list = studyProgressMapper.findByUserIdAndSubjectId(userId, subjectId);
 
