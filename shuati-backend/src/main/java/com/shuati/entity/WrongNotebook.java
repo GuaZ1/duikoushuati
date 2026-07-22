@@ -11,6 +11,7 @@ public class WrongNotebook {
     private Long studentId;
     private Long questionId;
     private Integer wrongCount;
+    private Integer weight;
     private LocalDateTime lastWrongAt;
     private Boolean mastered;
 }

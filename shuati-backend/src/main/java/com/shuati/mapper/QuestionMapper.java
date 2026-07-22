@@ -51,6 +51,22 @@ public interface QuestionMapper {
                                                                @Param("difficulty") Integer difficulty,
                                                                @Param("type") QuestionType type);
 
+    @Select("<script>" +
+            "SELECT q.id AS question_id, q.subject_id, s.name AS subject_name, " +
+            "q.type, q.difficulty, q.content, q.answer, q.analysis, q.score, " +
+            "q.knowledge_point_ids, q.source, " +
+            "o.id AS option_id, o.option_key, o.content AS option_content, o.is_correct " +
+            "FROM question q " +
+            "LEFT JOIN subject s ON q.subject_id = s.id " +
+            "LEFT JOIN question_option o ON q.id = o.question_id " +
+            "WHERE q.id IN " +
+            "<foreach collection='ids' item='id' open='(' separator=',' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            "ORDER BY q.id, o.option_key" +
+            "</script>")
+    List<QuestionPracticeVo> findPracticeQuestionsByIds(@Param("ids") List<Long> ids);
+
     @Insert("INSERT INTO question (subject_id, knowledge_point_ids, type, difficulty, content, answer, analysis, score, source) " +
             "VALUES (#{subjectId}, #{knowledgePointIds}, #{type}, #{difficulty}, #{content}, #{answer}, #{analysis}, #{score}, #{source})")
     @Options(useGeneratedKeys = true, keyProperty = "id")

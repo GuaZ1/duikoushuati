@@ -12,6 +12,8 @@ public interface QuestionService {
 
     List<PracticeQuestionDto> listForPractice(Long subjectId, Integer difficulty, QuestionType type);
 
+    List<PracticeQuestionDto> listWrongbookPractice(Long studentId);
+
     QuestionDto detail(Long id);
 
     Long create(QuestionDto dto);

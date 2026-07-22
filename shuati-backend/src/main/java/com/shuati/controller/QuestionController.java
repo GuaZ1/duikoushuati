@@ -1,6 +1,7 @@
 package com.shuati.controller;
 
 import com.shuati.annotation.RequireRole;
+import com.shuati.context.UserContext;
 import com.shuati.dto.ApiResult;
 import com.shuati.dto.PracticeQuestionDto;
 import com.shuati.dto.QuestionDto;
@@ -78,6 +79,11 @@ public class QuestionController {
             @RequestParam(required = false) Integer difficulty,
             @RequestParam(required = false) QuestionType type) {
         return ApiResult.ok(questionService.listForPractice(subjectId, difficulty, type));
+    }
+
+    @GetMapping("/wrongbook-practice")
+    public ApiResult<List<PracticeQuestionDto>> listWrongbookPractice() {
+        return ApiResult.ok(questionService.listWrongbookPractice(UserContext.getUserId()));
     }
 
     @GetMapping("/{id}")
