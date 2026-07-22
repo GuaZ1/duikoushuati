@@ -3,13 +3,17 @@ package com.shuati.controller;
 import com.shuati.context.UserContext;
 import com.shuati.dto.ApiResult;
 import com.shuati.dto.ProgressDto;
+import com.shuati.dto.UpdateProfileRequest;
 import com.shuati.dto.UserStatisticsDto;
 import com.shuati.dto.WrongNotebookDto;
 import com.shuati.entity.User;
 import com.shuati.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,6 +30,11 @@ public class UserController {
     @GetMapping("/me")
     public ApiResult<User> me() {
         return ApiResult.ok(UserContext.get());
+    }
+
+    @PutMapping("/me")
+    public ApiResult<User> updateMe(@RequestBody @Valid UpdateProfileRequest request) {
+        return ApiResult.ok(userService.updateProfile(UserContext.getUserId(), request.getNickname(), request.getAvatar()));
     }
 
     @GetMapping("/me/progress")

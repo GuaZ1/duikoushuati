@@ -66,21 +66,19 @@ public class AuthService {
 
         User user = userMapper.findByOpenid(session.getOpenid());
         if (user == null) {
+            // 新用户注册：必须同时携带昵称和头像；否则通知前端展示注册表单
+            if (nickname == null || nickname.isBlank() || avatarUrl == null || avatarUrl.isBlank()) {
+                return LoginResponse.needRegister();
+            }
             user = new User();
             user.setRole(UserRole.STUDENT);
             user.setOpenid(session.getOpenid());
-            user.setNickname(defaultIfBlank(nickname, "微信用户"));
+            user.setNickname(nickname);
             user.setAvatar(avatarUrl);
             user.setCreatedAt(LocalDateTime.now());
             userMapper.insert(user);
-        } else {
-            if (nickname != null && !nickname.isBlank()) {
-                user.setNickname(nickname);
-            }
-            if (avatarUrl != null && !avatarUrl.isBlank()) {
-                user.setAvatar(avatarUrl);
-            }
         }
+        // 老用户登录不覆盖昵称头像，资料仅允许在个人中心主动修改
 
         String token = UUID.randomUUID().toString().replace("-", "");
         LocalDateTime expireAt = LocalDateTime.now().plusDays(TOKEN_EXPIRE_DAYS);
@@ -89,7 +87,7 @@ public class AuthService {
         userMapper.update(user);
 
         long expiresInSeconds = TOKEN_EXPIRE_DAYS * 24 * 60 * 60;
-        return new LoginResponse(token, expiresInSeconds, user);
+        return LoginResponse.of(token, expiresInSeconds, user);
     }
 
     private String defaultIfBlank(String value, String defaultValue) {
@@ -124,6 +122,6 @@ public class AuthService {
         userMapper.update(user);
 
         long expiresInSeconds = TOKEN_EXPIRE_DAYS * 24 * 60 * 60;
-        return new LoginResponse(token, expiresInSeconds, user);
+        return LoginResponse.of(token, expiresInSeconds, user);
     }
 }

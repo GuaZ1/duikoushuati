@@ -11,6 +11,8 @@ public interface UserService {
 
     User info(Long id);
 
+    User updateProfile(Long userId, String nickname, String avatar);
+
     List<ProgressDto> progress(Long userId, Long subjectId);
 
     List<WrongNotebookDto> wrongBook(Long userId);

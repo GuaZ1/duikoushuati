@@ -24,4 +24,7 @@ public interface UserMapper {
             "avatar = #{avatar}, grade = #{grade}, school = #{school}, token = #{token}, " +
             "token_expire_at = #{tokenExpireAt} WHERE id = #{id}")
     int update(User user);
+
+    @Update("UPDATE app_user SET nickname = #{nickname}, avatar = #{avatar} WHERE id = #{id}")
+    int updateProfile(@Param("id") Long id, @Param("nickname") String nickname, @Param("avatar") String avatar);
 }
