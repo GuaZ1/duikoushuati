@@ -13,13 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -32,8 +28,20 @@ public class UploadController {
             "image/jpeg", "image/png", "image/gif", "image/webp"
     );
 
+    // 扩展名 → MIME 类型映射，用于 base64 接口拼 data URL
+    private static final Map<String, String> EXT_TO_MIME = Map.of(
+            "jpg", "image/jpeg",
+            "jpeg", "image/jpeg",
+            "png", "image/png",
+            "gif", "image/gif",
+            "webp", "image/webp"
+    );
+
     private final FileStorageProperties fileStorageProperties;
 
+    /**
+     * H5 multipart 上传：直接读字节转 base64 返回 data URL，不再写盘
+     */
     @PostMapping("/upload/avatar")
     public ApiResult<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -42,83 +50,46 @@ public class UploadController {
         if (file.getSize() > fileStorageProperties.getMaxAvatarSize()) {
             return ApiResult.fail("头像文件大小不能超过 2MB");
         }
-        if (!ALLOWED_CONTENT_TYPES.contains(file.getContentType())) {
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
             return ApiResult.fail("仅支持 JPG、PNG、GIF、WEBP 格式的图片");
         }
 
-        String originalFilename = file.getOriginalFilename();
-        String extension = getExtension(originalFilename);
-        String filename = UUID.randomUUID() + extension;
-
         try {
-            Path targetDir = Paths.get(System.getProperty("user.dir"),
-                    fileStorageProperties.getUploadDir(),
-                    fileStorageProperties.getAvatarDir());
-            if (!Files.exists(targetDir)) {
-                Files.createDirectories(targetDir);
-            }
-            Path targetPath = targetDir.resolve(filename);
-            file.transferTo(targetPath.toFile());
-
-            String avatarUrl = "/" + fileStorageProperties.getUploadDir() + "/"
-                    + fileStorageProperties.getAvatarDir() + "/" + filename;
-            return ApiResult.ok(avatarUrl);
+            String base64 = Base64.getEncoder().encodeToString(file.getBytes());
+            return ApiResult.ok("data:" + contentType + ";base64," + base64);
         } catch (IOException e) {
-            log.error("头像上传失败", e);
+            log.error("头像处理失败", e);
             return ApiResult.fail("头像上传失败，请稍后重试");
         }
     }
 
     /**
-     * 接收 base64 编码的头像（微信小程序云托管 callContainer 专用）
+     * 微信小程序 base64 上传：拼装 data URL 返回，不写盘
      */
     @PostMapping("/upload/avatar/base64")
     public ApiResult<String> uploadAvatarBase64(@RequestBody Map<String, String> body) {
         String base64 = body.get("base64");
-        String ext = body.getOrDefault("ext", "jpg");
+        String ext = body.getOrDefault("ext", "jpg").toLowerCase();
 
         if (base64 == null || base64.isBlank()) {
             return ApiResult.fail("头像数据不能为空");
         }
 
-        // 校验扩展名白名单
-        if (!Set.of("jpg", "jpeg", "png", "gif", "webp").contains(ext.toLowerCase())) {
+        String mimeType = EXT_TO_MIME.get(ext);
+        if (mimeType == null) {
             return ApiResult.fail("仅支持 JPG、PNG、GIF、WEBP 格式的图片");
         }
 
         try {
             byte[] bytes = Base64.getDecoder().decode(base64);
-
             if (bytes.length > fileStorageProperties.getMaxAvatarSize()) {
                 return ApiResult.fail("头像文件大小不能超过 2MB");
             }
-
-            String filename = UUID.randomUUID() + "." + ext;
-            Path targetDir = Paths.get(System.getProperty("user.dir"),
-                    fileStorageProperties.getUploadDir(),
-                    fileStorageProperties.getAvatarDir());
-            if (!Files.exists(targetDir)) {
-                Files.createDirectories(targetDir);
-            }
-            Path targetPath = targetDir.resolve(filename);
-            Files.write(targetPath, bytes);
-
-            String avatarUrl = "/" + fileStorageProperties.getUploadDir() + "/"
-                    + fileStorageProperties.getAvatarDir() + "/" + filename;
-            return ApiResult.ok(avatarUrl);
+            return ApiResult.ok("data:" + mimeType + ";base64," + base64);
         } catch (IllegalArgumentException e) {
             log.warn("base64 解码失败", e);
             return ApiResult.fail("头像数据格式错误");
-        } catch (IOException e) {
-            log.error("头像上传失败", e);
-            return ApiResult.fail("头像上传失败，请稍后重试");
         }
-    }
-
-    private String getExtension(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return ".png";
-        }
-        return filename.substring(filename.lastIndexOf("."));
     }
 }

@@ -32,7 +32,7 @@ CREATE TABLE app_user (
     openid VARCHAR(64),
     phone VARCHAR(20),
     nickname VARCHAR(50),
-    avatar VARCHAR(255),
+    avatar MEDIUMTEXT,
     grade VARCHAR(20),
     school VARCHAR(100),
     token VARCHAR(64),
