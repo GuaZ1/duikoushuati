@@ -9,6 +9,6 @@ public class UpdateProfileRequest {
     @Size(max = 64, message = "昵称长度不能超过64个字符")
     private String nickname;
 
-    @Size(max = 512, message = "头像URL长度不能超过512个字符")
+    // avatar 为 base64 data URI（data:image/xxx;base64,...），长度可达数百KB，不做长度限制
     private String avatar;
 }
