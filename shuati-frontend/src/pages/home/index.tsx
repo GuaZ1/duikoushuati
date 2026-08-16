@@ -4,10 +4,18 @@ import Taro, { useDidShow } from '@tarojs/taro';
 import { useUserStore } from '@/store/user';
 import { getCurrentUser, getLastPracticePosition, getMyStatistics, getSubjects } from '@/services/api';
 import { LastPracticePosition, Subject, UserStatistics } from '@/types';
+import { getResumeKind } from '@/services/practiceSession';
 import getSubjectsMock from '@/data/subjects';
 import StatCard from '@/components/StatCard';
 import EmptyState from '@/components/EmptyState';
+import ModeDialog from '@/components/ModeDialog';
 import styles from './index.module.scss';
+
+// 专业考试日期：2027-03-13（month 从 0 开始，2 表示三月）
+const EXAM_DATE_MS = new Date(2027, 2, 13).getTime();
+// 单招考试日期：2027-03-21
+const DANZHAO_DATE_MS = new Date(2027, 2, 21).getTime();
+const wrongbookImg = require('../../assets/subjects/wrongbook.jpg');
 
 class ErrorCatcher extends Component<{ children: React.ReactNode }> {
   state = { error: null as Error | null };
@@ -25,13 +33,15 @@ class ErrorCatcher extends Component<{ children: React.ReactNode }> {
 }
 
 const HomePage: React.FC = () => {
-  const { user, setUser } = useUserStore();
+  const { setUser } = useUserStore();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [stats, setStats] = useState<UserStatistics>({ todayCount: 0, totalCount: 0, correctRate: 0 });
   const [lastPosition, setLastPosition] = useState<LastPracticePosition | null>(null);
+  const [initializing, setInitializing] = useState(true);
+  const [modeSubject, setModeSubject] = useState<number | null>(null);
 
   const fetchLastPosition = () => {
-    getLastPracticePosition()
+    return getLastPracticePosition()
       .then(setLastPosition)
       .catch((e: Error) => {
         console.log('[HomePage] getLastPracticePosition failed:', e.message);
@@ -39,29 +49,32 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    getCurrentUser().then(setUser).catch((e: Error) => {
-      console.log('[HomePage] getCurrentUser failed:', e.message);
-    });
-    getMyStatistics()
-      .then(setStats)
-      .catch((e: Error) => {
-        console.log('[HomePage] getMyStatistics failed:', e.message);
-      });
-    fetchLastPosition();
-    getSubjects().then((res) => {
-      const mock = getSubjectsMock();
-      const base = res.length > 0 ? res : mock;
-      const imageByName = new Map(mock.map((s) => [s.name, s.image]));
-      const imageByCode = new Map(mock.map((s) => [s.code, s.image]));
-      const nameByCode = new Map(mock.map((s) => [s.code, s.name]));
-      setSubjects(
-        base.map((s) => ({
-          ...s,
-          name: nameByCode.get(s.code) || s.name,
-          image: s.image || imageByName.get(s.name) || imageByCode.get(s.code)
-        }))
-      );
-    });
+    const tasks = [
+      getCurrentUser().then(setUser).catch((e: Error) => {
+        console.log('[HomePage] getCurrentUser failed:', e.message);
+      }),
+      getMyStatistics()
+        .then(setStats)
+        .catch((e: Error) => {
+          console.log('[HomePage] getMyStatistics failed:', e.message);
+        }),
+      fetchLastPosition(),
+      getSubjects().then((res) => {
+        const mock = getSubjectsMock();
+        const base = res.length > 0 ? res : mock;
+        const imageByName = new Map(mock.map((s) => [s.name, s.image]));
+        const imageByCode = new Map(mock.map((s) => [s.code, s.image]));
+        const nameByCode = new Map(mock.map((s) => [s.code, s.name]));
+        setSubjects(
+          base.map((s) => ({
+            ...s,
+            name: nameByCode.get(s.code) || s.name,
+            image: s.image || imageByName.get(s.name) || imageByCode.get(s.code)
+          }))
+        );
+      })
+    ];
+    Promise.all(tasks).then(() => setInitializing(false));
   }, []);
 
   useDidShow(() => {
@@ -69,22 +82,62 @@ const HomePage: React.FC = () => {
   });
 
   const goPractice = (subjectId: number) => {
-    Taro.navigateTo({ url: `/pages/question/index?subjectId=${subjectId}` });
+    setModeSubject(subjectId);
+  };
+
+  const handleModeSelect = (mode: 'practice' | 'exam') => {
+    const sid = modeSubject;
+    setModeSubject(null);
+    if (sid == null) return;
+    Taro.navigateTo({ url: `/pages/question/index?subjectId=${sid}&mode=${mode}` });
+  };
+
+  const goWrongbookPractice = () => {
+    Taro.navigateTo({ url: '/pages/question/index?mode=wrongbook' });
   };
 
   const resumePractice = () => {
     if (!lastPosition) return;
-    Taro.navigateTo({
-      url: `/pages/question/index?subjectId=${lastPosition.subjectId}&questionId=${lastPosition.questionId}`
-    });
+    const sid = lastPosition.subjectId;
+    // 最近一次是未完成的考试 → 直接续做考试；否则续做练习
+    if (getResumeKind(sid) === 'exam') {
+      Taro.navigateTo({ url: `/pages/question/index?subjectId=${sid}&mode=exam&resume=1` });
+    } else {
+      Taro.navigateTo({ url: `/pages/question/index?subjectId=${sid}&resume=1` });
+    }
   };
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const daysUntilExam = Math.max(0, Math.round((EXAM_DATE_MS - todayStart) / 86400000));
+  const daysUntilDanzhao = Math.max(0, Math.round((DANZHAO_DATE_MS - todayStart) / 86400000));
 
   return (
     <ErrorCatcher>
       <View className={styles.page}>
         <View className={styles.header}>
-          <Text className={styles.greeting}>你好，{user?.nickname || '同学'}</Text>
-          <Text className={styles.subtitle}>今天也来做几道题吧</Text>
+          <View className={styles.countdownCard}>
+            <Text className={styles.countdownTitle}>考试倒计时</Text>
+            <View className={styles.examList}>
+              <View className={styles.examItem}>
+                <Text className={styles.examName}>专业考试</Text>
+                <View className={styles.examDays}>
+                  <Text className={styles.daysLabel}>还剩</Text>
+                  <Text className={styles.daysNum}>{daysUntilExam}</Text>
+                  <Text className={styles.daysUnit}>天</Text>
+                </View>
+              </View>
+              <View className={styles.examItem}>
+                <Text className={styles.examName}>单招考试</Text>
+                <View className={styles.examDays}>
+                  <Text className={styles.daysLabel}>还剩</Text>
+                  <Text className={styles.daysNum}>{daysUntilDanzhao}</Text>
+                  <Text className={styles.daysUnit}>天</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+          {initializing && <Text className={styles.serverHint}>服务器初始化中。。</Text>}
         </View>
 
         <View className={styles.stats}>
@@ -98,7 +151,7 @@ const HomePage: React.FC = () => {
               <Text className={styles.resumeTitle}>回到上次刷题的位置</Text>
               <Text className={styles.resumeSub}>
                 {lastPosition.valid
-                  ? `继续刷 ${lastPosition.subjectName}`
+                  ? `继续${getResumeKind(lastPosition.subjectId) === 'exam' ? '考试' : '刷'} ${lastPosition.subjectName}`
                   : '题目已失效，点击重新选择'}
               </Text>
             </View>
@@ -110,6 +163,13 @@ const HomePage: React.FC = () => {
           <Text className={styles.sectionTitle}>选择学科</Text>
           <View className={styles.grid}>
             {subjects.length === 0 && <EmptyState title="暂无学科" />}
+            <View
+              className={styles.subjectCard}
+              onClick={goWrongbookPractice}
+            >
+              <Image className={styles.wrongbookImage} src={wrongbookImg} mode="aspectFill" />
+              <Text className={styles.subjectName}>错题本</Text>
+            </View>
             {subjects.map((s) => (
               <View
                 key={s.id}
@@ -128,6 +188,12 @@ const HomePage: React.FC = () => {
             ))}
           </View>
         </View>
+
+        <ModeDialog
+          visible={modeSubject !== null}
+          onSelect={handleModeSelect}
+          onCancel={() => setModeSubject(null)}
+        />
       </View>
     </ErrorCatcher>
   );

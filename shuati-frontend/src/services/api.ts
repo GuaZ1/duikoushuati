@@ -15,10 +15,20 @@ import getQuestionsMock, { getQuestionDetailMock } from '@/data/questions';
 import getProgressMock from '@/data/progress';
 import getWrongbookMock from '@/data/wrongbook';
 import submitAnswerMock from '@/data/answer';
+import { useUserStore } from '@/store/user';
 
 const isWeapp = process.env.TARO_ENV === 'weapp';
-const BASE_URL = process.env.TARO_APP_API_URL || 'http://localhost:8080';
 const IS_DEV = process.env.NODE_ENV === 'development';
+
+// H5 开发环境用本地 localhost，其他情况用环境变量或云托管地址
+const BASE_URL = (() => {
+  // H5 开发环境：强制使用 localhost
+  if (!isWeapp && IS_DEV) {
+    return 'http://localhost:8080';
+  }
+  // 其他情况：使用环境变量，如果没有则默认 localhost
+  return process.env.TARO_APP_API_URL || 'http://localhost:8080';
+})();
 
 // 微信云托管配置
 const CLOUD_ENV = 'prod-d3gi3mvu1d1660fe9';
@@ -32,6 +42,28 @@ function toLogin() {
   Taro.removeStorageSync('token');
   Taro.removeStorageSync('user');
   Taro.redirectTo({ url: '/pages/login/index' });
+}
+
+// H5 测试环境静默登录闸门：首次业务请求前自动用固定测试账号登录换取 token，
+// 多个并发请求共享同一次登录，避免展示登录页与 401 反复跳转
+let h5AuthPromise: Promise<void> | null = null;
+
+function ensureH5Auth(): Promise<void> {
+  if (isWeapp || getToken()) {
+    return Promise.resolve();
+  }
+  if (!h5AuthPromise) {
+    h5AuthPromise = loginByH5('', '')
+      .then((data) => {
+        Taro.setStorageSync('token', data.token);
+        useUserStore.getState().setUser(data.user);
+      })
+      .catch((e) => {
+        h5AuthPromise = null; // 登录失败允许下次重试
+        console.warn('[API] H5 静默登录失败:', e);
+      });
+  }
+  return h5AuthPromise;
 }
 
 /**
@@ -110,6 +142,10 @@ async function request<T>(
   }
 
   // ── H5 / 本地：走常规 HTTP ──
+  // 业务接口发起前，确保已完成 H5 静默登录拿到 token（后端强制鉴权，避免 401 被弹回登录页）
+  if (!url.startsWith('/api/auth/')) {
+    await ensureH5Auth();
+  }
   try {
     const res = await Taro.request({
       url: `${BASE_URL}${url}`,
@@ -155,6 +191,13 @@ export async function loginByCode(
   return request<LoginResponse>('/api/auth/login', 'POST', { code, nickname, avatarUrl });
 }
 
+export async function loginByH5(
+  nickname: string,
+  avatarUrl: string
+): Promise<LoginResponse> {
+  return request<LoginResponse>('/api/auth/login/h5', 'POST', { nickname, avatarUrl });
+}
+
 // ======================== 头像上传 ========================
 
 export async function uploadAvatar(filePath: string): Promise<string> {
@@ -192,10 +235,19 @@ export async function uploadAvatar(filePath: string): Promise<string> {
   return result.data;
 }
 
+// H5 专用：base64 上传头像
+export async function uploadAvatarBase64(base64: string, ext: string): Promise<string> {
+  return request<string>('/api/auth/upload/avatar/base64', 'POST', { base64, ext });
+}
+
 // ======================== 用户 ========================
 
 export async function getCurrentUser(): Promise<User> {
   return request<User>('/api/users/me');
+}
+
+export async function updateProfile(nickname: string, avatar: string): Promise<User> {
+  return request<User>('/api/users/me', 'PUT', { nickname, avatar });
 }
 
 export async function getMyStatistics(): Promise<UserStatistics> {
@@ -236,6 +288,11 @@ export async function getPracticeQuestions(params?: {
   return request<Question[]>('/api/questions/practice', 'GET', params, () => getQuestionsMock(params));
 }
 
+// 错题本专项练习：拉取当前用户所有科目、未掌握的错题（含 weight），乱序在前端完成
+export async function getWrongbookPracticeQuestions(): Promise<Question[]> {
+  return request<Question[]>('/api/questions/wrongbook-practice', 'GET', undefined, () => getQuestionsMock());
+}
+
 export async function getQuestionDetail(id: number): Promise<Question> {
   return request<Question>(`/api/questions/${id}`, 'GET', undefined, () => {
     const q = getQuestionDetailMock(id);
@@ -244,8 +301,12 @@ export async function getQuestionDetail(id: number): Promise<Question> {
   });
 }
 
-export async function submitAnswer(questionId: number, answer: string): Promise<AnswerResult> {
-  return request<AnswerResult>('/api/answers', 'POST', { questionId, answer }, () =>
+export async function submitAnswer(
+  questionId: number,
+  answer: string,
+  mode?: 'WRONGBOOK'
+): Promise<AnswerResult> {
+  return request<AnswerResult>('/api/answers', 'POST', { questionId, answer, mode }, () =>
     submitAnswerMock(questionId, answer)
   );
 }

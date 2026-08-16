@@ -1,0 +1,101 @@
+@use '@/styles/variables.scss' as *;
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  width: 600rpx;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  box-shadow: $shadow-float;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.title {
+  display: block;
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  text-align: center;
+  margin-bottom: $spacing-lg;
+}
+
+.modeCard {
+  display: flex;
+  flex-direction: column;
+  border: 2rpx solid #e5e6eb;
+  border-radius: $radius-lg;
+  padding: $spacing-md $spacing-lg;
+  margin-bottom: $spacing-md;
+
+  &:active {
+    border-color: $color-primary;
+    background: rgba($color-primary, 0.05);
+  }
+}
+
+.modeNameRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.modeName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-right: $spacing-xs;
+}
+
+.modeTag {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  border: 1rpx solid $color-primary;
+  border-radius: $radius-sm;
+  padding: 0 8rpx;
+  line-height: 1.4;
+}
+
+.modeDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.cancel {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  margin-top: $spacing-sm;
+  border-radius: $radius-button;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.cancelText {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

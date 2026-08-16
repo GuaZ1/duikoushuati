@@ -4,13 +4,14 @@ const csharpImg = require('../assets/subjects/csharp.jpg');
 const jichuImg = require('../assets/subjects/计算机基础.jpg');
 const wangluoImg = require('../assets/subjects/计算机网络.jpg');
 const mysqlImg = require('../assets/subjects/mysql.jpg');
+const mathImg = require('../assets/subjects/math.png');
 
 const subjects: Subject[] = [
   { id: 1, name: 'C#', code: 'csharp', image: csharpImg },
   { id: 2, name: '计算机基础', code: 'computer-basics', image: jichuImg },
   { id: 3, name: '计算机网络', code: 'computer-network', image: wangluoImg },
   { id: 4, name: 'MySQL', code: 'mysql', image: mysqlImg },
-  { id: 5, name: '数学', code: 'math' }
+  { id: 5, name: '数学', code: 'math', image: mathImg }
 ];
 
 export default function getSubjectsMock(): Subject[] {

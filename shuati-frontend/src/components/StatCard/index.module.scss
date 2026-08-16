@@ -4,7 +4,7 @@
   flex: 1;
   background: $color-bg-card;
   border-radius: $radius-lg;
-  padding: $spacing-md;
+  padding: $spacing-xs $spacing-md;
   margin-right: $spacing-md;
   box-shadow: $shadow-card;
   position: relative;
@@ -17,7 +17,7 @@
 
 .value {
   display: block;
-  font-size: $font-size-xxl;
+  font-size: $font-size-xl;
   font-weight: $font-weight-bold;
   color: $color-text-primary;
   margin-bottom: $spacing-xs;

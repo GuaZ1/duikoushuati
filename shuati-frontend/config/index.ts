@@ -52,13 +52,14 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
       },
       webpackChain(chain) {
         chain.resolve.plugin('tsconfig-paths').use(TsconfigPathsPlugin);
-        try {
+        // 开发模式(--watch)不注册 terserPlugin，一旦访问 minimizer('terserPlugin')
+        // 会创建空插件占位，导致 toConfig 阶段报 "use(<Plugin>) was not called"。
+        // dev 本就不压缩，无需设置 extractComments，仅生产构建处理。
+        if (process.env.NODE_ENV !== 'development') {
           chain.optimization.minimizer('terserPlugin').tap((args) => {
             args[0].extractComments = false;
             return args;
           });
-        } catch (_) {
-          // 开发模式下 terser 插件未注册，跳过
         }
       },
     },

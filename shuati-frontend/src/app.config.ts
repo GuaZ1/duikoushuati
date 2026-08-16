@@ -4,6 +4,7 @@ export default defineAppConfig({
     'pages/bank/index',
     'pages/mine/index',
     'pages/question/index',
+    'pages/exam/result/index',
     'pages/result/index',
     'pages/wrongbook/index',
     'pages/teacher/question/index',

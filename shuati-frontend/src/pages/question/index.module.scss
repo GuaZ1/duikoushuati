@@ -18,6 +18,30 @@
   margin-bottom: $spacing-md;
 }
 
+.progressLeft {
+  display: flex;
+  align-items: center;
+}
+
+.prevButton {
+  display: flex;
+  align-items: center;
+  padding: 4rpx 12rpx;
+  margin-right: $spacing-sm;
+  border-radius: $radius-xs;
+  background: $color-bg-card;
+  border: 1rpx solid $color-border;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.prevText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
 .subject {
   font-size: $font-size-sm;
   color: $color-primary;
@@ -29,6 +53,77 @@
 .count {
   font-size: $font-size-sm;
   color: $color-text-secondary;
+}
+
+.progressRight {
+  display: flex;
+  align-items: center;
+}
+
+.timer {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-right: $spacing-sm;
+  font-variant-numeric: tabular-nums;
+}
+
+.weightRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.weightLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-right: $spacing-sm;
+}
+
+.weightDots {
+  display: flex;
+  align-items: center;
+}
+
+.weightDot {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: $radius-round;
+  background: $color-border;
+  margin-right: $spacing-xs;
+}
+
+.weightDotActive {
+  background: $color-success;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.slideInRight {
+  animation: slideInRight 0.3s ease;
+}
+
+.slideInLeft {
+  animation: slideInLeft 0.3s ease;
 }
 
 .card {

@@ -1,0 +1,7 @@
+-- 2026-07-22 错题本专项练习：新增掌握权重字段
+-- weight 记录错题在错题本专项练习中连续答对的次数，答对 +1、答错清零，
+-- 累计到 5 时视为掌握（mastered=true），错题本不再展示该题。
+-- USE shuati;
+--
+-- ALTER TABLE wrong_notebook
+--     ADD COLUMN weight INT DEFAULT 0 AFTER wrong_count;

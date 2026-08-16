@@ -40,3 +40,8 @@ mysql_data/
 
 # 日志
 *.log
+
+# 本地临时文件
+new/
+新建 文本文档.txt
+.claude/
