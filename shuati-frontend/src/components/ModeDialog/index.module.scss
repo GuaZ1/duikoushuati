@@ -72,6 +72,34 @@
   color: $color-text-secondary;
 }
 
+.resumeCard {
+  @include button-reset;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-lg;
+  margin-bottom: $spacing-md;
+  border-radius: $radius-lg;
+  background: rgba($color-primary, 0.08);
+  border: 2rpx dashed $color-primary;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.resumeText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
+.resumeArrow {
+  font-size: $font-size-md;
+  color: $color-primary;
+}
+
 .cancel {
   @include button-reset;
   width: 100%;

@@ -6,9 +6,18 @@ interface ModeDialogProps {
   visible: boolean;
   onSelect: (mode: 'practice' | 'exam') => void;
   onCancel: () => void;
+  // 该学科存在未完成的练习会话时显示「回到上次刷题位置」
+  resumeAvailable?: boolean;
+  onResume?: () => void;
 }
 
-const ModeDialog: React.FC<ModeDialogProps> = ({ visible, onSelect, onCancel }) => {
+const ModeDialog: React.FC<ModeDialogProps> = ({
+  visible,
+  onSelect,
+  onCancel,
+  resumeAvailable,
+  onResume
+}) => {
   if (!visible) return null;
 
   return (
@@ -26,6 +35,12 @@ const ModeDialog: React.FC<ModeDialogProps> = ({ visible, onSelect, onCancel }) 
           <Text className={styles.modeName}>练习模式</Text>
           <Text className={styles.modeDesc}>随机乱序，逐题看解析，答完看正确率</Text>
         </View>
+        {resumeAvailable && (
+          <View className={styles.resumeCard} onClick={onResume}>
+            <Text className={styles.resumeText}>回到上次刷题位置</Text>
+            <Text className={styles.resumeArrow}>›</Text>
+          </View>
+        )}
         <View className={styles.cancel} onClick={onCancel}>
           <Text className={styles.cancelText}>取消</Text>
         </View>

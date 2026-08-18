@@ -47,6 +47,21 @@ export function resumeSession(subjectId: number): PracticeSession | null {
   return session;
 }
 
+// 错题本会话：洗牌后取前 limit 道；错题库不足 limit 时循环重复凑满 limit。
+// 同局内尽量不重复（池足够大时取出的都是不同题），不同局之间同一道错题可以重复出现。
+export function startWrongbookSession(list: Question[], limit = 10): Question[] {
+  if (list.length === 0) return [];
+  const shuffled = shuffle(list);
+  if (shuffled.length >= limit) {
+    return shuffled.slice(0, limit);
+  }
+  const result: Question[] = [];
+  for (let i = 0; result.length < limit; i += 1) {
+    result.push(shuffled[i % shuffled.length]);
+  }
+  return result;
+}
+
 // 更新当前进度，供答题推进时写回缓存。
 export function saveSessionIndex(subjectId: number, currentIndex: number): void {
   const session = Taro.getStorageSync<PracticeSession>(sessionKey(subjectId));

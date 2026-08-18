@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
-import { AnswerResult, ExamRecord, ExamResultPayload, Question } from '@/types';
+import { AnswerResult, ExamRecord, ExamResultPayload, Question, WrongbookResultPayload } from '@/types';
 import { useUserStore } from '@/store/user';
 import { getPracticeQuestions, getWrongbookPracticeQuestions, submitAnswer } from '@/services/api';
 import {
   startSession,
+  startWrongbookSession,
   resumeSession,
   saveSessionIndex,
   startExamSession,
@@ -24,6 +25,9 @@ const WRONGBOOK_SUBJECT_ID = -1;
 
 // 考试模式结果报告的本地缓存 key
 const EXAM_RESULT_KEY = 'exam_result_payload';
+
+// 错题本结果报告的本地缓存 key
+const WRONGBOOK_RESULT_KEY = 'wrongbook_result_payload';
 
 const QuestionPage: React.FC = () => {
   const { user } = useUserStore();
@@ -114,11 +118,13 @@ const QuestionPage: React.FC = () => {
         setQuestions([]);
         return;
       }
-      // 每次进入错题本都是一局全新会话：重新拉取（含最新 weight）并洗牌，
-      // 保证同一道错题一局只出现一次，刷满 5 次需连续开 5 局。
-      const ordered = startSession(WRONGBOOK_SUBJECT_ID, list);
+      // 每次进入错题本都是一局全新会话：重新拉取（含最新 weight）并洗牌取 10 道。
+      // 同局内尽量不重复，错题库不足 10 道时重复凑满；不同局之间同一道错题可以重复出现。
+      const ordered = startWrongbookSession(list);
       setQuestions(ordered);
       setCurrentIndex(0);
+      setAnswers([]);
+      setCorrectCount(0);
     } catch (e) {
       console.error(e);
     }
@@ -191,7 +197,7 @@ const QuestionPage: React.FC = () => {
   // 考试模式：当前题已答（含返回上一题查看）→ 显示「下一题/提交答卷」；未答题答完自动跳转
   const examAnswered = Boolean(answers[currentIndex]);
   const footerVisible = exam ? examAnswered : Boolean(result);
-  const footerText = isLast ? (exam ? '提交答卷' : '完成练习') : '下一题';
+  const footerText = isLast ? (exam ? '提交答卷' : wrongbook ? '查看错题报告' : '完成练习') : '下一题';
 
   const handleSelect = async (optionKey: string) => {
     if (!question || result) return;
@@ -234,11 +240,22 @@ const QuestionPage: React.FC = () => {
         return;
       }
       setResult(res);
-      // 错题本模式：用后端回传的最新 weight 刷新当前题的 5 个点（答对亮一个，答错清零）
-      if (wrongbook && res.weight != null) {
-        setQuestions((prev) =>
-          prev.map((q, idx) => (idx === currentIndex ? { ...q, weight: res.weight } : q))
-        );
+      // 错题本模式：记录本题作答供报告页展示，并用后端回传的最新 weight 刷新 5 个点
+      if (wrongbook) {
+        const nextAnswers = answers.slice();
+        nextAnswers[currentIndex] = {
+          selectedKey: optionKey,
+          correctStatus: res.correctStatus,
+          correctAnswer: res.correctAnswer,
+          analysis: res.analysis,
+          score: res.score
+        };
+        setAnswers(nextAnswers);
+        if (res.weight != null) {
+          setQuestions((prev) =>
+            prev.map((q, idx) => (idx === currentIndex ? { ...q, weight: res.weight } : q))
+          );
+        }
       }
     } catch (e) {
       console.error(e);
@@ -270,7 +287,7 @@ const QuestionPage: React.FC = () => {
     saveExamSessionProgress(subjectId, { currentIndex: prevIndex, elapsedSeconds: elapsed });
   };
 
-  // 考试模式滑动切题：右滑下一题、左滑上一题，未作答也可直接滑动
+  // 考试模式滑动切题：右滑上一题、左滑下一题，未作答也可直接滑动
   const onTouchStart = (e: any) => {
     const t = e.touches?.[0];
     if (!t) return;
@@ -286,9 +303,9 @@ const QuestionPage: React.FC = () => {
     // 位移过小视为点按，纵向位移大视为滚动，均不触发切题
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
     if (dx > 0) {
-      examNext();
-    } else {
       examPrev();
+    } else {
+      examNext();
     }
   };
 
@@ -302,6 +319,10 @@ const QuestionPage: React.FC = () => {
       return;
     }
     if (isLast) {
+      if (wrongbook) {
+        showWrongbookReport();
+        return;
+      }
       setShowDialog(true);
       return;
     }
@@ -310,6 +331,16 @@ const QuestionPage: React.FC = () => {
     saveSessionIndex(subjectId, nextIndex);
     setSelected('');
     setResult(null);
+  };
+
+  // 错题本：10 道刷完跳报告页，报告只展示本局做错的题
+  const showWrongbookReport = () => {
+    const payload: WrongbookResultPayload = {
+      questions,
+      answers
+    };
+    Taro.setStorageSync(WRONGBOOK_RESULT_KEY, payload);
+    Taro.redirectTo({ url: '/pages/wrongbook/result/index' });
   };
 
   const handleFinish = () => {
@@ -341,7 +372,7 @@ const QuestionPage: React.FC = () => {
   }
 
   return (
-    <View className={styles.page}>
+    <View className={styles.page} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <View className={styles.progress}>
         <View className={styles.progressLeft}>
           {exam && (
@@ -382,8 +413,6 @@ const QuestionPage: React.FC = () => {
           exam && slideDir === 'next' && styles.slideInRight,
           exam && slideDir === 'prev' && styles.slideInLeft
         )}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
       >
       <View className={styles.card}>
         <Text className={styles.content}>{question.content}</Text>

@@ -16,9 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 
@@ -124,13 +122,10 @@ public class AnswerServiceImpl implements AnswerService {
             return CorrectStatus.WRONG;
         }
         QuestionType type = question.getType();
-        if (type == QuestionType.SINGLE_CHOICE || type == QuestionType.JUDGEMENT) {
+        if (type == QuestionType.SINGLE_CHOICE || type == QuestionType.TRUE_FALSE) {
             String correct = findCorrectOptionKey(question);
             return correct != null && correct.equalsIgnoreCase(studentAnswer.trim())
                     ? CorrectStatus.CORRECT : CorrectStatus.WRONG;
-        }
-        if (type == QuestionType.MULTIPLE_CHOICE) {
-            return gradeMultipleChoice(question, studentAnswer);
         }
         return CorrectStatus.UNGRADED;
     }
@@ -143,26 +138,4 @@ public class AnswerServiceImpl implements AnswerService {
                 .orElse(question.getAnswer());
     }
 
-    private CorrectStatus gradeMultipleChoice(Question question, String studentAnswer) {
-        List<String> correctKeys = questionCacheService.getOptionsByQuestionId(question.getId()).stream()
-                .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
-                .map(QuestionOption::getOptionKey)
-                .map(String::toUpperCase)
-                .sorted()
-                .collect(Collectors.toList());
-        List<String> selectedKeys = Arrays.stream(studentAnswer.split("[,，]"))
-                .map(String::trim)
-                .map(String::toUpperCase)
-                .filter(s -> !s.isEmpty())
-                .sorted()
-                .collect(Collectors.toList());
-        if (selectedKeys.equals(correctKeys)) {
-            return CorrectStatus.CORRECT;
-        }
-        if (selectedKeys.isEmpty()) {
-            return CorrectStatus.WRONG;
-        }
-        long correctCount = selectedKeys.stream().filter(correctKeys::contains).count();
-        return correctCount > 0 ? CorrectStatus.PARTIAL : CorrectStatus.WRONG;
-    }
 }

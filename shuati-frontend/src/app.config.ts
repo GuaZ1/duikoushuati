@@ -7,6 +7,7 @@ export default defineAppConfig({
     'pages/exam/result/index',
     'pages/result/index',
     'pages/wrongbook/index',
+    'pages/wrongbook/result/index',
     'pages/teacher/question/index',
     'pages/teacher/question/form',
     'pages/login/index',

@@ -4,7 +4,7 @@ import Taro, { useDidShow } from '@tarojs/taro';
 import { useUserStore } from '@/store/user';
 import { getCurrentUser, getLastPracticePosition, getMyStatistics, getSubjects } from '@/services/api';
 import { LastPracticePosition, Subject, UserStatistics } from '@/types';
-import { getResumeKind } from '@/services/practiceSession';
+import { getResumeKind, resumeExamSession, resumeSession } from '@/services/practiceSession';
 import getSubjectsMock from '@/data/subjects';
 import StatCard from '@/components/StatCard';
 import EmptyState from '@/components/EmptyState';
@@ -90,6 +90,23 @@ const HomePage: React.FC = () => {
     setModeSubject(null);
     if (sid == null) return;
     Taro.navigateTo({ url: `/pages/question/index?subjectId=${sid}&mode=${mode}` });
+  };
+
+  // 该学科存在未完成的练习或考试会话时，在模式弹窗里显示「回到上次刷题位置」
+  const modeResumeAvailable =
+    modeSubject != null &&
+    (resumeSession(modeSubject) !== null || resumeExamSession(modeSubject) !== null);
+
+  const handleResume = () => {
+    const sid = modeSubject;
+    setModeSubject(null);
+    if (sid == null) return;
+    // 最近一次是未完成的考试 → 续做考试；否则续做练习
+    if (getResumeKind(sid) === 'exam') {
+      Taro.navigateTo({ url: `/pages/question/index?subjectId=${sid}&mode=exam&resume=1` });
+    } else {
+      Taro.navigateTo({ url: `/pages/question/index?subjectId=${sid}&resume=1` });
+    }
   };
 
   const goWrongbookPractice = () => {
@@ -193,6 +210,8 @@ const HomePage: React.FC = () => {
           visible={modeSubject !== null}
           onSelect={handleModeSelect}
           onCancel={() => setModeSubject(null)}
+          resumeAvailable={modeResumeAvailable}
+          onResume={handleResume}
         />
       </View>
     </ErrorCatcher>

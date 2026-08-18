@@ -17,9 +17,7 @@ export default function submitAnswerMock(
 
   const correctAnswer = question.answer || '';
   const isCorrect =
-    question.type === 'MULTIPLE_CHOICE'
-      ? normalize(answer) === normalize(correctAnswer)
-      : answer.trim().toUpperCase() === correctAnswer.trim().toUpperCase();
+    answer.trim().toUpperCase() === correctAnswer.trim().toUpperCase();
 
   return {
     correctStatus: isCorrect ? 'CORRECT' : 'WRONG',
@@ -27,14 +25,4 @@ export default function submitAnswerMock(
     analysis: question.analysis || '',
     score: isCorrect ? question.score : 0
   };
-}
-
-function normalize(str: string): string {
-  return str
-    .toUpperCase()
-    .split(/[,，]/)
-    .map((s) => s.trim())
-    .filter((s) => s)
-    .sort()
-    .join(',');
 }

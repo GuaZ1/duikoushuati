@@ -13,15 +13,13 @@ import styles from './form.module.scss';
 
 const typeOptions = [
   { value: 'SINGLE_CHOICE', label: '单选题' },
-  { value: 'MULTIPLE_CHOICE', label: '多选题' },
-  { value: 'FILL_BLANK', label: '填空题' },
-  { value: 'ESSAY', label: '问答题' }
+  { value: 'TRUE_FALSE', label: '判断题' },
+  { value: 'FILL_BLANK', label: '填空题' }
 ];
 
 const OPTION_KEYS = ['A', 'B', 'C', 'D'];
 
-const isChoice = (type: string) =>
-  type === 'SINGLE_CHOICE' || type === 'MULTIPLE_CHOICE';
+const isChoice = (type: string) => type === 'SINGLE_CHOICE';
 
 const defaultOptions = (): QuestionOption[] =>
   OPTION_KEYS.map((key) => ({
@@ -124,19 +122,6 @@ const QuestionFormPage: React.FC = () => {
     });
   };
 
-  const toggleMultipleAnswer = (key: string) => {
-    setForm((prev) => {
-      const options = (prev.options || []).map((o) =>
-        o.optionKey === key ? { ...o, isCorrect: !o.isCorrect } : o
-      );
-      const answer = options
-        .filter((o) => o.isCorrect)
-        .map((o) => o.optionKey)
-        .join(',');
-      return { ...prev, answer, options };
-    });
-  };
-
   const submit = async () => {
     if (!form.subjectId) {
       Taro.showToast({ title: '请选择学科', icon: 'none' });
@@ -231,27 +216,16 @@ const QuestionFormPage: React.FC = () => {
           <Text className={styles.label}>正确答案</Text>
           <View className={styles.answerGroup}>
             {OPTION_KEYS.map((key) => {
-              const checked =
-                form.type === 'SINGLE_CHOICE'
-                  ? form.answer === key
-                  : form.answer.split(/[,，]/).includes(key);
+              const checked = form.answer === key;
               return (
                 <View
                   key={key}
                   className={`${styles.answerItem} ${checked ? styles.answerChecked : ''}`}
-                  onClick={() =>
-                    form.type === 'SINGLE_CHOICE'
-                      ? toggleSingleAnswer(key)
-                      : toggleMultipleAnswer(key)
-                  }
+                  onClick={() => toggleSingleAnswer(key)}
                 >
                   <View className={styles.selectorBox}>
                     <View
-                      className={
-                        form.type === 'SINGLE_CHOICE'
-                          ? styles.radioInner
-                          : styles.checkboxInner
-                      }
+                      className={styles.radioInner}
                       style={{ opacity: checked ? 1 : 0 }}
                     />
                   </View>

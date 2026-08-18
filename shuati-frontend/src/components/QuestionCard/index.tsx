@@ -10,10 +10,8 @@ interface QuestionCardProps {
 
 const typeMap: Record<QuestionType, string> = {
   SINGLE_CHOICE: '单选',
-  MULTIPLE_CHOICE: '多选',
-  JUDGEMENT: '判断',
-  FILL_BLANK: '填空',
-  ESSAY: '解答'
+  TRUE_FALSE: '判断',
+  FILL_BLANK: '填空'
 };
 
 const QuestionCard: React.FC<QuestionCardProps> = ({ question, onClick }) => {

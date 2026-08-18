@@ -18,10 +18,8 @@ export interface Subject {
 
 export type QuestionType =
   | 'SINGLE_CHOICE'
-  | 'MULTIPLE_CHOICE'
-  | 'JUDGEMENT'
-  | 'FILL_BLANK'
-  | 'ESSAY';
+  | 'TRUE_FALSE'
+  | 'FILL_BLANK';
 
 export interface QuestionOption {
   id: number;
@@ -114,6 +112,12 @@ export interface ExamResultPayload {
   subjectId: number;
   subjectName: string;
   elapsedSeconds: number;
+  questions: Question[];
+  answers: (ExamRecord | null)[];
+}
+
+// 错题本：传给报告页的会话数据，报告只展示 answers 中答错的题
+export interface WrongbookResultPayload {
   questions: Question[];
   answers: (ExamRecord | null)[];
 }
