@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -127,7 +128,47 @@ public class AnswerServiceImpl implements AnswerService {
             return correct != null && correct.equalsIgnoreCase(studentAnswer.trim())
                     ? CorrectStatus.CORRECT : CorrectStatus.WRONG;
         }
+        if (type == QuestionType.FILL_BLANK) {
+            return gradeFillBlank(question.getAnswer(), studentAnswer);
+        }
         return CorrectStatus.UNGRADED;
+    }
+
+    // 填空题判分（answer 规范见 batch-gen-question-sql skill）：
+    // - 单空：answer 为标准答案文本；多空：answer 用 | 分隔各空答案，学生输入用逗号（,，）隔开；
+    // - 同一空有多个可选答案：answer 用英文 or（前后带空格、不区分大小写）分隔，任选一个即可。
+    // 比较大小写不敏感、忽略首尾空白，空数不一致判错。
+    private CorrectStatus gradeFillBlank(String correctAnswer, String studentAnswer) {
+        if (correctAnswer == null || correctAnswer.isBlank()) {
+            return CorrectStatus.UNGRADED;
+        }
+        String[] correctBlanks = splitTrim(correctAnswer, "\\|");
+        String[] studentBlanks = splitTrim(studentAnswer, "[,，]");
+        if (correctBlanks.length != studentBlanks.length) {
+            return CorrectStatus.WRONG;
+        }
+        for (int i = 0; i < correctBlanks.length; i++) {
+            String studentBlank = studentBlanks[i];
+            boolean anyMatch = false;
+            for (String alternative : splitTrim(correctBlanks[i], "(?i)\\s+or\\s+")) {
+                if (alternative.equalsIgnoreCase(studentBlank)) {
+                    anyMatch = true;
+                    break;
+                }
+            }
+            if (!anyMatch) {
+                return CorrectStatus.WRONG;
+            }
+        }
+        return CorrectStatus.CORRECT;
+    }
+
+    // 按分隔符切分：去首尾空白、去掉多余空段
+    private String[] splitTrim(String text, String regex) {
+        return Arrays.stream(text.trim().split(regex))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
     }
 
     private String findCorrectOptionKey(Question question) {

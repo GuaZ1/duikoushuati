@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text } from '@tarojs/components';
+import { View, Text, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import { AnswerResult, ExamRecord, ExamResultPayload, Question, WrongbookResultPayload } from '@/types';
@@ -36,6 +36,8 @@ const QuestionPage: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState<string>('');
+  // 填空题答案输入框的内容；与 selected 分离，保证考试模式「选完即锁定」判断不受输入过程影响
+  const [fillInput, setFillInput] = useState('');
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [subjectName, setSubjectName] = useState('');
@@ -165,6 +167,8 @@ const QuestionPage: React.FC = () => {
         setCurrentIndex(session.currentIndex);
         setAnswers(session.answers);
         setElapsed(session.elapsedSeconds);
+        setSelected(session.answers[session.currentIndex]?.selectedKey || '');
+        setFillInput(session.answers[session.currentIndex]?.selectedKey || '');
         return;
       }
     }
@@ -187,6 +191,8 @@ const QuestionPage: React.FC = () => {
 
   const question = questions[currentIndex];
   const isLast = currentIndex >= questions.length - 1;
+  // 已出结果（练习/错题本）或考试模式该题已作答：填空输入框与提交按钮锁定
+  const locked = Boolean(result) || (exam && Boolean(answers[currentIndex]));
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -203,6 +209,10 @@ const QuestionPage: React.FC = () => {
     if (!question || result) return;
     // 考试模式：一题一次选择机会，选完即锁定
     if (exam && selected) return;
+    if (question.type === 'FILL_BLANK' && !optionKey.trim()) {
+      Taro.showToast({ title: '请输入答案', icon: 'none' });
+      return;
+    }
     setSelected(optionKey);
     try {
       const res = await submitAnswer(question.id, optionKey, wrongbook ? 'WRONGBOOK' : undefined);
@@ -233,6 +243,7 @@ const QuestionPage: React.FC = () => {
         setSlideDir('next');
         setCurrentIndex(nextIndex);
         setSelected('');
+        setFillInput('');
         saveExamSessionProgress(subjectId, {
           currentIndex: nextIndex,
           elapsedSeconds: elapsed
@@ -274,6 +285,7 @@ const QuestionPage: React.FC = () => {
     setSlideDir('next');
     setCurrentIndex(nextIndex);
     setSelected(answers[nextIndex]?.selectedKey || '');
+    setFillInput(answers[nextIndex]?.selectedKey || '');
     saveExamSessionProgress(subjectId, { currentIndex: nextIndex, elapsedSeconds: elapsed });
   };
 
@@ -284,6 +296,7 @@ const QuestionPage: React.FC = () => {
     setSlideDir('prev');
     setCurrentIndex(prevIndex);
     setSelected(answers[prevIndex]?.selectedKey || '');
+    setFillInput(answers[prevIndex]?.selectedKey || '');
     saveExamSessionProgress(subjectId, { currentIndex: prevIndex, elapsedSeconds: elapsed });
   };
 
@@ -330,6 +343,7 @@ const QuestionPage: React.FC = () => {
     setCurrentIndex(nextIndex);
     saveSessionIndex(subjectId, nextIndex);
     setSelected('');
+    setFillInput('');
     setResult(null);
   };
 
@@ -415,30 +429,72 @@ const QuestionPage: React.FC = () => {
         )}
       >
       <View className={styles.card}>
+        {question.type === 'FILL_BLANK' && (
+          <Text className={styles.fillHint}>如果有多个空，用逗号隔开，不区分大小写</Text>
+        )}
         <Text className={styles.content}>{question.content}</Text>
       </View>
 
       <View className={styles.card}>
-        {question.options?.map((opt) => (
-          <View
-            key={opt.id}
-            className={classnames(
-              styles.option,
-              selected === opt.optionKey && styles.optionSelected,
-              result &&
-                opt.optionKey === result.correctAnswer &&
-                styles.optionCorrect,
-              result &&
-                selected === opt.optionKey &&
-                result.correctStatus !== 'CORRECT' &&
-                styles.optionWrong
+        {question.options && question.options.length > 0 ? (
+          question.options.map((opt) => (
+            <View
+              key={opt.id}
+              className={classnames(
+                styles.option,
+                selected === opt.optionKey && styles.optionSelected,
+                result &&
+                  opt.optionKey === result.correctAnswer &&
+                  styles.optionCorrect,
+                result &&
+                  selected === opt.optionKey &&
+                  result.correctStatus !== 'CORRECT' &&
+                  styles.optionWrong
+              )}
+              onClick={() => handleSelect(opt.optionKey)}
+            >
+              <Text className={styles.optionKey}>{opt.optionKey}</Text>
+              <Text className={styles.optionContent}>{opt.content}</Text>
+            </View>
+          ))
+        ) : question.type === 'TRUE_FALSE' ? (
+          [
+            { key: 'T', label: '正确' },
+            { key: 'F', label: '错误' }
+          ].map(({ key, label }) => (
+            <View
+              key={key}
+              className={classnames(
+                styles.option,
+                selected === key && styles.optionSelected,
+                result && key === result.correctAnswer && styles.optionCorrect,
+                result &&
+                  selected === key &&
+                  result.correctStatus !== 'CORRECT' &&
+                  styles.optionWrong
+              )}
+              onClick={() => handleSelect(key)}
+            >
+              <Text className={styles.optionKey}>{key}</Text>
+              <Text className={styles.optionContent}>{label}</Text>
+            </View>
+          ))
+        ) : question.type === 'FILL_BLANK' ? (
+          <View>
+            <Input
+              className={styles.fillInput}
+              value={fillInput}
+              disabled={locked}
+              placeholder="请输入答案"
+              onInput={(e) => setFillInput(e.detail.value)}
+            />
+            {!locked && (
+              <View className={styles.fillSubmit} onClick={() => handleSelect(fillInput)}>
+                <Text className={styles.fillSubmitText}>提交答案</Text>
+              </View>
             )}
-            onClick={() => handleSelect(opt.optionKey)}
-          >
-            <Text className={styles.optionKey}>{opt.optionKey}</Text>
-            <Text className={styles.optionContent}>{opt.content}</Text>
           </View>
-        ))}
+        ) : null}
       </View>
       </View>
 

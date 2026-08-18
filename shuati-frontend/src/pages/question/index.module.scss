@@ -188,6 +188,44 @@
   color: $color-text-primary;
 }
 
+.fillHint {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.fillInput {
+  width: 100%;
+  height: $button-height-lg;
+  padding: 0 $spacing-md;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-card;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.fillSubmit {
+  @include button-reset;
+  width: 240rpx;
+  height: $button-height-sm;
+  margin-top: $spacing-md;
+  margin-left: auto;
+  background: $color-primary;
+  border-radius: $radius-sm;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.fillSubmitText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+}
+
 .resultCard {
   background: $color-bg-card;
   border-radius: $radius-lg;
