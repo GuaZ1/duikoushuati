@@ -10,6 +10,7 @@ import {
   startWrongbookSession,
   resumeSession,
   saveSessionIndex,
+  savePracticeProgress,
   startExamSession,
   resumeExamSession,
   saveExamSessionProgress,
@@ -139,6 +140,23 @@ const QuestionPage: React.FC = () => {
       const session = resumeSession(sid);
       if (session) {
         applyQuestions(session.questions, session.currentIndex);
+        // 恢复作答记录与正确数，保证完成弹窗按整局统计；旧缓存无这两个字段时兜底
+        const restoredAnswers =
+          session.answers || new Array(session.questions.length).fill(null);
+        setAnswers(restoredAnswers);
+        setCorrectCount(session.correctCount || 0);
+        // 恢复当前题已作答状态（选中项与解析），避免续做后看起来像未答
+        const current = restoredAnswers[session.currentIndex];
+        if (current) {
+          setSelected(current.selectedKey);
+          setFillInput(current.selectedKey);
+          setResult({
+            correctStatus: current.correctStatus,
+            correctAnswer: current.correctAnswer,
+            analysis: current.analysis,
+            score: current.score
+          });
+        }
         return;
       }
     }
@@ -251,22 +269,25 @@ const QuestionPage: React.FC = () => {
         return;
       }
       setResult(res);
-      // 错题本模式：记录本题作答供报告页展示，并用后端回传的最新 weight 刷新 5 个点
-      if (wrongbook) {
-        const nextAnswers = answers.slice();
-        nextAnswers[currentIndex] = {
-          selectedKey: optionKey,
-          correctStatus: res.correctStatus,
-          correctAnswer: res.correctAnswer,
-          analysis: res.analysis,
-          score: res.score
-        };
-        setAnswers(nextAnswers);
-        if (res.weight != null) {
-          setQuestions((prev) =>
-            prev.map((q, idx) => (idx === currentIndex ? { ...q, weight: res.weight } : q))
-          );
-        }
+      // 练习/错题本统一记录本题作答（供正确率统计与续做恢复）。
+      // 用「重算正确数」而非「累加」：箭头回看重新作答时旧记录被覆盖，不会重复计数。
+      const nextAnswers = answers.slice();
+      nextAnswers[currentIndex] = {
+        selectedKey: optionKey,
+        correctStatus: res.correctStatus,
+        correctAnswer: res.correctAnswer,
+        analysis: res.analysis,
+        score: res.score
+      };
+      setAnswers(nextAnswers);
+      const newCorrectCount = nextAnswers.filter((a) => a?.correctStatus === 'CORRECT').length;
+      setCorrectCount(newCorrectCount);
+      savePracticeProgress(subjectId, { answers: nextAnswers, correctCount: newCorrectCount });
+      // 错题本模式：用后端回传的最新 weight 刷新 5 个点
+      if (wrongbook && res.weight != null) {
+        setQuestions((prev) =>
+          prev.map((q, idx) => (idx === currentIndex ? { ...q, weight: res.weight } : q))
+        );
       }
     } catch (e) {
       console.error(e);
@@ -298,6 +319,41 @@ const QuestionPage: React.FC = () => {
     setSelected(answers[prevIndex]?.selectedKey || '');
     setFillInput(answers[prevIndex]?.selectedKey || '');
     saveExamSessionProgress(subjectId, { currentIndex: prevIndex, elapsedSeconds: elapsed });
+  };
+
+  // 练习/错题本模式：跳转到指定题目，dir 控制切题动画方向（与考试模式滑动同款）。
+  // 目标题已作答 → 恢复之前答案并锁定（显示解析，不可修改）；未作答 → 清空作答状态。
+  const jumpTo = (index: number, dir: 'next' | 'prev') => {
+    setSlideDir(dir);
+    setCurrentIndex(index);
+    saveSessionIndex(subjectId, index);
+    const record = answers[index];
+    if (record) {
+      setSelected(record.selectedKey);
+      setFillInput(record.selectedKey);
+      setResult({
+        correctStatus: record.correctStatus,
+        correctAnswer: record.correctAnswer,
+        analysis: record.analysis,
+        score: record.score
+      });
+    } else {
+      setSelected('');
+      setFillInput('');
+      setResult(null);
+    }
+  };
+
+  // 练习/错题本模式：右箭头跳下一题。已出结果（出现「下一题」按钮）时禁用，避免与按钮重复
+  const practiceNext = () => {
+    if (exam || isLast || footerVisible) return;
+    jumpTo(currentIndex + 1, 'next');
+  };
+
+  // 练习/错题本模式：左箭头返回上一题（已答过的题恢复答案并锁定，不可修改）
+  const practicePrev = () => {
+    if (exam || currentIndex <= 0) return;
+    jumpTo(currentIndex - 1, 'prev');
   };
 
   // 考试模式滑动切题：右滑上一题、左滑下一题，未作答也可直接滑动
@@ -339,12 +395,7 @@ const QuestionPage: React.FC = () => {
       setShowDialog(true);
       return;
     }
-    const nextIndex = currentIndex + 1;
-    setCurrentIndex(nextIndex);
-    saveSessionIndex(subjectId, nextIndex);
-    setSelected('');
-    setFillInput('');
-    setResult(null);
+    jumpTo(currentIndex + 1, 'next');
   };
 
   // 错题本：10 道刷完跳报告页，报告只展示本局做错的题
@@ -422,10 +473,10 @@ const QuestionPage: React.FC = () => {
       )}
 
       <View
-        key={exam ? `exam-${currentIndex}` : 'content'}
+        key={`${exam ? 'exam' : 'practice'}-${currentIndex}`}
         className={classnames(
-          exam && slideDir === 'next' && styles.slideInRight,
-          exam && slideDir === 'prev' && styles.slideInLeft
+          slideDir === 'next' && styles.slideInRight,
+          slideDir === 'prev' && styles.slideInLeft
         )}
       >
       <View className={styles.card}>
@@ -526,11 +577,28 @@ const QuestionPage: React.FC = () => {
       />
 
       <View className={styles.footer}>
-        {footerVisible && (
-          <View className={styles.submitButton} onClick={handleNext}>
-            <Text className={styles.submitText}>{footerText}</Text>
+        <View className={styles.navRow}>
+          <View
+            className={classnames(styles.navArrow, currentIndex <= 0 && styles.navArrowDisabled)}
+            onClick={() => (exam ? examPrev() : practicePrev())}
+          >
+            <Text className={styles.navArrowText}>‹</Text>
           </View>
-        )}
+          {footerVisible && (
+            <View className={styles.submitButtonFlex} onClick={handleNext}>
+              <Text className={styles.submitText}>{footerText}</Text>
+            </View>
+          )}
+          <View
+            className={classnames(
+              styles.navArrow,
+              (isLast || (!exam && footerVisible)) && styles.navArrowDisabled
+            )}
+            onClick={() => (exam ? examNext() : practiceNext())}
+          >
+            <Text className={styles.navArrowText}>›</Text>
+          </View>
+        </View>
       </View>
     </View>
   );
