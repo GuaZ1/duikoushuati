@@ -9,12 +9,15 @@ import getSubjectsMock from '@/data/subjects';
 import StatCard from '@/components/StatCard';
 import EmptyState from '@/components/EmptyState';
 import ModeDialog from '@/components/ModeDialog';
+import ServerStartingDialog from '@/components/ServerStartingDialog';
 import styles from './index.module.scss';
 
 // 专业考试日期：2027-03-13（month 从 0 开始，2 表示三月）
 const EXAM_DATE_MS = new Date(2027, 2, 13).getTime();
 // 单招考试日期：2027-03-21
 const DANZHAO_DATE_MS = new Date(2027, 2, 21).getTime();
+// 初始化请求超过该时长仍未返回，判定云托管实例为 0、后端正在冷启动
+const SERVER_STARTUP_TIMEOUT_MS = 5000;
 const wrongbookImg = require('../../assets/subjects/wrongbook.jpg');
 
 class ErrorCatcher extends Component<{ children: React.ReactNode }> {
@@ -38,6 +41,7 @@ const HomePage: React.FC = () => {
   const [stats, setStats] = useState<UserStatistics>({ todayCount: 0, totalCount: 0, correctRate: 0 });
   const [lastPosition, setLastPosition] = useState<LastPracticePosition | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [serverStarting, setServerStarting] = useState(false);
   const [modeSubject, setModeSubject] = useState<number | null>(null);
 
   const fetchLastPosition = () => {
@@ -49,6 +53,23 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
+    // 学科列表：后端返回有效数据时用后端，否则（后端冷启动失败/返回空）回退本地 mock，
+    // 学科封面图本就来自本地 bundle，保证后端不可用首页学科卡片也不消失。
+    const applySubjects = (list: Subject[]) => {
+      const mock = getSubjectsMock();
+      const base = list.length > 0 ? list : mock;
+      const imageByName = new Map(mock.map((s) => [s.name, s.image]));
+      const imageByCode = new Map(mock.map((s) => [s.code, s.image]));
+      const nameByCode = new Map(mock.map((s) => [s.code, s.name]));
+      setSubjects(
+        base.map((s) => ({
+          ...s,
+          name: nameByCode.get(s.code) || s.name,
+          image: s.image || imageByName.get(s.name) || imageByCode.get(s.code)
+        }))
+      );
+    };
+
     const tasks = [
       getCurrentUser().then(setUser).catch((e: Error) => {
         console.log('[HomePage] getCurrentUser failed:', e.message);
@@ -59,22 +80,26 @@ const HomePage: React.FC = () => {
           console.log('[HomePage] getMyStatistics failed:', e.message);
         }),
       fetchLastPosition(),
-      getSubjects().then((res) => {
-        const mock = getSubjectsMock();
-        const base = res.length > 0 ? res : mock;
-        const imageByName = new Map(mock.map((s) => [s.name, s.image]));
-        const imageByCode = new Map(mock.map((s) => [s.code, s.image]));
-        const nameByCode = new Map(mock.map((s) => [s.code, s.name]));
-        setSubjects(
-          base.map((s) => ({
-            ...s,
-            name: nameByCode.get(s.code) || s.name,
-            image: s.image || imageByName.get(s.name) || imageByCode.get(s.code)
-          }))
-        );
-      })
+      getSubjects()
+        .then(applySubjects)
+        .catch((e: Error) => {
+          console.log('[HomePage] getSubjects failed, fallback to local mock:', e.message);
+          applySubjects(getSubjectsMock());
+        })
     ];
-    Promise.all(tasks).then(() => setInitializing(false));
+    // 所有任务均已各自 catch，Promise.all 必然 resolve，初始化提示不会卡死。
+    // 若初始化请求超过阈值仍未完成，说明后端请求长时间挂起（云托管实例为 0 正在冷启动），
+    // 弹出「服务器启动中」提示；后端就绪返回后自动关闭。
+    const startupTimer = setTimeout(() => {
+      console.log('[HomePage] 初始化超时，判定服务器正在启动');
+      setServerStarting(true);
+    }, SERVER_STARTUP_TIMEOUT_MS);
+    Promise.all(tasks).then(() => {
+      clearTimeout(startupTimer);
+      setServerStarting(false);
+      setInitializing(false);
+    });
+    return () => clearTimeout(startupTimer);
   }, []);
 
   useDidShow(() => {
@@ -111,6 +136,12 @@ const HomePage: React.FC = () => {
 
   const goWrongbookPractice = () => {
     Taro.navigateTo({ url: '/pages/question/index?mode=wrongbook' });
+  };
+
+  // 服务器冷启动中：重新进入小程序（reLaunch 重置页面栈，重新走首页初始化流程）
+  const restartApp = () => {
+    setServerStarting(false);
+    Taro.reLaunch({ url: '/pages/home/index' });
   };
 
   const resumePractice = () => {
@@ -213,6 +244,7 @@ const HomePage: React.FC = () => {
           resumeAvailable={modeResumeAvailable}
           onResume={handleResume}
         />
+        <ServerStartingDialog visible={serverStarting} onRestart={restartApp} />
       </View>
     </ErrorCatcher>
   );
