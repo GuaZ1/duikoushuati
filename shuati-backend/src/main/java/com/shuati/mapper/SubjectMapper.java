@@ -8,7 +8,7 @@ import java.util.List;
 @Mapper
 public interface SubjectMapper {
 
-    @Select("SELECT * FROM subject")
+    @Select("SELECT * FROM subject ORDER BY id")
     List<Subject> findAll();
 
     @Select("SELECT * FROM subject WHERE id = #{id}")
