@@ -56,16 +56,16 @@ const ResultDialog: React.FC<ResultDialogProps> = ({
     <View className={styles.overlay}>
       <View className={styles.dialog}>
         <Text className={styles.title}>练习完成</Text>
-        <View className={styles.rateCircle}>
+        <View className={styles.rateRow}>
+          <Text className={styles.checkMark}>✓</Text>
           <Text className={styles.rateValue}>{rate}%</Text>
-          <Text className={styles.rateLabel}>正确率</Text>
         </View>
         <Text className={styles.summary}>
           共 {total} 题，正确 {correct} 题
         </Text>
         <Text className={styles.comment}>{getComment(rate)}</Text>
         <View className={styles.button} onClick={onConfirm}>
-          <Text className={styles.buttonText}>知道了</Text>
+          <Text className={styles.buttonText}>返回主页面</Text>
         </View>
       </View>
     </View>

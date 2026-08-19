@@ -1,13 +1,17 @@
 import Taro from '@tarojs/taro';
 import { ExamRecord, Question } from '@/types';
 
-// 一份刷题会话缓存：乱序后的题目快照 + 当前进度。
+// 一份刷题会话缓存：乱序后的题目快照 + 当前进度 + 每题作答记录。
 // 顺序以 questions 数组本身为准，续做时直接复用，绝不重新洗牌，
 // 从而保证「返回上次刷题位置」时题目顺序与上次完全一致。
+// answers 与 questions 等长，未作答的题目槽位为 null；
+// correctCount 由 answers 推导，单独冗余存储以兼容旧缓存（无 answers 字段）。
 export interface PracticeSession {
   subjectId: number;
   questions: Question[];
   currentIndex: number;
+  correctCount: number;
+  answers: (ExamRecord | null)[];
   updatedAt: number;
 }
 
@@ -32,6 +36,8 @@ export function startSession(subjectId: number, list: Question[]): Question[] {
     subjectId,
     questions,
     currentIndex: 0,
+    correctCount: 0,
+    answers: new Array(questions.length).fill(null),
     updatedAt: Date.now()
   };
   Taro.setStorageSync(sessionKey(subjectId), session);
@@ -67,6 +73,19 @@ export function saveSessionIndex(subjectId: number, currentIndex: number): void 
   const session = Taro.getStorageSync<PracticeSession>(sessionKey(subjectId));
   if (!session) return;
   session.currentIndex = currentIndex;
+  session.updatedAt = Date.now();
+  Taro.setStorageSync(sessionKey(subjectId), session);
+}
+
+// 更新练习会话的作答记录与正确数，供续做时完整恢复正确率统计（不覆盖 currentIndex）。
+export function savePracticeProgress(
+  subjectId: number,
+  patch: Pick<PracticeSession, 'answers' | 'correctCount'>
+): void {
+  const session = Taro.getStorageSync<PracticeSession>(sessionKey(subjectId));
+  if (!session) return;
+  session.answers = patch.answers;
+  session.correctCount = patch.correctCount;
   session.updatedAt = Date.now();
   Taro.setStorageSync(sessionKey(subjectId), session);
 }
