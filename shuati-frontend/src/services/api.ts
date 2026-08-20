@@ -10,7 +10,6 @@ import {
   UserStatistics,
   WrongNotebookItem
 } from '@/types';
-import getSubjectsMock from '@/data/subjects';
 import getQuestionsMock, { getQuestionDetailMock } from '@/data/questions';
 import getProgressMock from '@/data/progress';
 import getWrongbookMock from '@/data/wrongbook';
@@ -268,8 +267,10 @@ export async function getLastPracticePosition(): Promise<LastPracticePosition | 
 
 // ======================== 学科 & 题目 ========================
 
+// 学科列表：不传 fallback。冷启动失败就抛错，首页靠 ServerStartingDialog 提示用户，
+// 后端就绪后自动刷新小程序重新拉取，避免显示与后端不一致的 mock 假学科。
 export async function getSubjects(): Promise<Subject[]> {
-  return request<Subject[]>('/api/subjects', 'GET', undefined, getSubjectsMock);
+  return request<Subject[]>('/api/subjects', 'GET');
 }
 
 export async function getQuestions(params?: {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Component } from 'react';
+import React, { useEffect, useState, useRef, Component } from 'react';
 import { View, Text, Image } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { useUserStore } from '@/store/user';
@@ -16,8 +16,10 @@ import styles from './index.module.scss';
 const EXAM_DATE_MS = new Date(2027, 2, 13).getTime();
 // 单招考试日期：2027-03-21
 const DANZHAO_DATE_MS = new Date(2027, 2, 21).getTime();
-// 初始化请求超过该时长仍未返回，判定云托管实例为 0、后端正在冷启动
-const SERVER_STARTUP_TIMEOUT_MS = 5000;
+// 初始化请求超过该时长仍未返回，判定云托管实例为 0、后端正在冷启动，弹出提示
+const SERVER_STARTUP_TIMEOUT_MS = 3000;
+// 弹窗弹出后，每隔该时长轮询一次后端是否就绪，就绪后自动刷新小程序
+const SERVER_HEALTH_POLL_INTERVAL_MS = 3000;
 const wrongbookImg = require('../../assets/subjects/wrongbook.jpg');
 
 class ErrorCatcher extends Component<{ children: React.ReactNode }> {
@@ -43,6 +45,7 @@ const HomePage: React.FC = () => {
   const [initializing, setInitializing] = useState(true);
   const [serverStarting, setServerStarting] = useState(false);
   const [modeSubject, setModeSubject] = useState<number | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchLastPosition = () => {
     return getLastPracticePosition()
@@ -53,16 +56,15 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    // 学科列表：后端返回有效数据时用后端，否则（后端冷启动失败/返回空）回退本地 mock，
-    // 学科封面图本就来自本地 bundle，保证后端不可用首页学科卡片也不消失。
+    // 学科列表：仅在后端返回有效数据时显示，不回退 mock（mock 数据对用户无意义）。
+    // 后端冷启动失败时学科列表保持空，由 ServerStartingDialog 引导用户等待并自动刷新。
     const applySubjects = (list: Subject[]) => {
       const mock = getSubjectsMock();
-      const base = list.length > 0 ? list : mock;
       const imageByName = new Map(mock.map((s) => [s.name, s.image]));
       const imageByCode = new Map(mock.map((s) => [s.code, s.image]));
       const nameByCode = new Map(mock.map((s) => [s.code, s.name]));
       setSubjects(
-        base.map((s) => ({
+        list.map((s) => ({
           ...s,
           name: nameByCode.get(s.code) || s.name,
           image: s.image || imageByName.get(s.name) || imageByCode.get(s.code)
@@ -83,23 +85,44 @@ const HomePage: React.FC = () => {
       getSubjects()
         .then(applySubjects)
         .catch((e: Error) => {
-          console.log('[HomePage] getSubjects failed, fallback to local mock:', e.message);
-          applySubjects(getSubjectsMock());
+          console.log('[HomePage] getSubjects failed, 等待后端就绪后自动刷新:', e.message);
         })
     ];
-    // 所有任务均已各自 catch，Promise.all 必然 resolve，初始化提示不会卡死。
-    // 若初始化请求超过阈值仍未完成，说明后端请求长时间挂起（云托管实例为 0 正在冷启动），
-    // 弹出「服务器启动中」提示；后端就绪返回后自动关闭。
+
+    // 5 秒内若请求仍未全部返回，判定云托管冷启动，弹出「服务器启动中」提示；
+    // 之后每隔 3 秒轮询一次后端，一旦 getSubjects 成功响应说明后端就绪，
+    // 自动 reLaunch 重新进入首页，重新拉取全部真实数据。
     const startupTimer = setTimeout(() => {
-      console.log('[HomePage] 初始化超时，判定服务器正在启动');
+      console.log('[HomePage] 初始化超时，判定服务器正在启动，开始轮询后端');
       setServerStarting(true);
+      pollTimerRef.current = setInterval(() => {
+        getSubjects()
+          .then(() => {
+            console.log('[HomePage] 后端已就绪，自动刷新小程序');
+            if (pollTimerRef.current) {
+              clearInterval(pollTimerRef.current);
+              pollTimerRef.current = null;
+            }
+            Taro.reLaunch({ url: '/pages/home/index' });
+          })
+          .catch(() => {
+            console.log('[HomePage] 后端仍未就绪，继续轮询');
+          });
+      }, SERVER_HEALTH_POLL_INTERVAL_MS);
     }, SERVER_STARTUP_TIMEOUT_MS);
+
     Promise.all(tasks).then(() => {
       clearTimeout(startupTimer);
       setServerStarting(false);
       setInitializing(false);
     });
-    return () => clearTimeout(startupTimer);
+    return () => {
+      clearTimeout(startupTimer);
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
   }, []);
 
   useDidShow(() => {
@@ -138,8 +161,13 @@ const HomePage: React.FC = () => {
     Taro.navigateTo({ url: '/pages/question/index?mode=wrongbook' });
   };
 
-  // 服务器冷启动中：重新进入小程序（reLaunch 重置页面栈，重新走首页初始化流程）
+  // 服务器冷启动中：用户手动点「重新进入小程序」时触发。
+  // 清掉轮询定时器，reLaunch 重置页面栈重新走首页初始化流程。
   const restartApp = () => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
     setServerStarting(false);
     Taro.reLaunch({ url: '/pages/home/index' });
   };

@@ -9,6 +9,7 @@ interface ServerStartingDialogProps {
 
 // 云托管最小实例为 0：后端无人访问会自动关闭，再次访问需冷启动，
 // 期间初始化请求会长时间挂起，首页据此判定后弹出本提示。
+// 弹窗弹出后首页会每 3 秒轮询后端，就绪后自动关闭弹窗并刷新小程序。
 const ServerStartingDialog: React.FC<ServerStartingDialogProps> = ({ visible, onRestart }) => {
   if (!visible) return null;
 
@@ -24,6 +25,7 @@ const ServerStartingDialog: React.FC<ServerStartingDialogProps> = ({ visible, on
             请等待1分钟左右尝试重新进入小程序。。。
           </Text>
           <Text className={styles.contentText}>感谢！！！刷题愉快~祝你考高分</Text>
+          <Text className={styles.autoHint}>（后端就绪后将自动刷新，也可手动点击下方按钮）</Text>
         </View>
         <View className={styles.button} onClick={onRestart}>
           <Text className={styles.buttonText}>重新进入小程序</Text>
