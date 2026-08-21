@@ -312,6 +312,17 @@ export async function submitAnswer(
   );
 }
 
+// ======================== 题目反馈 ========================
+
+// 学生做题时点击「题目有问题？点击反馈」提交文字反馈，写入 question_feedback 表。
+// 不传 fallback：反馈必须落库，网络失败时让前端显示错误提示，不静默吞掉。
+export async function submitQuestionFeedback(
+  questionId: number,
+  content: string
+): Promise<number> {
+  return request<number>('/api/feedback', 'POST', { questionId, content });
+}
+
 // ======================== 教师端 ========================
 
 export async function createQuestion(data: Question): Promise<number> {

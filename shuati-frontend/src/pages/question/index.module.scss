@@ -60,6 +60,35 @@
   align-items: center;
 }
 
+.feedbackEntryRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: $spacing-sm;
+}
+
+.feedbackHint {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.feedbackEntry {
+  margin-left: $spacing-xs;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-xs;
+  background: rgba($color-primary, 0.08);
+  border: 1rpx solid rgba($color-primary, 0.3);
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.feedbackEntryText {
+  font-size: $font-size-xs;
+  color: $color-primary;
+}
+
 .timer {
   font-size: $font-size-sm;
   color: $color-text-secondary;

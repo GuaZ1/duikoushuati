@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS answer_record;
 DROP TABLE IF EXISTS wrong_notebook;
 DROP TABLE IF EXISTS user_last_practice;
 DROP TABLE IF EXISTS study_progress;
+DROP TABLE IF EXISTS question_feedback;
 DROP TABLE IF EXISTS question_option;
 DROP TABLE IF EXISTS question;
 DROP TABLE IF EXISTS knowledge_point;
@@ -103,4 +104,15 @@ CREATE TABLE user_last_practice (
     last_practice_at DATETIME NOT NULL,
     UNIQUE KEY uk_user_subject (user_id, subject_id),
     KEY idx_user_time (user_id, last_practice_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE question_feedback (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    question_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    created_at DATETIME NOT NULL,
+    KEY idx_question (question_id),
+    KEY idx_status_created (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

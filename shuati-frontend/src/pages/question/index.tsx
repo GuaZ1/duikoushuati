@@ -19,6 +19,7 @@ import {
 } from '@/services/practiceSession';
 import EmptyState from '@/components/EmptyState';
 import ResultDialog from '@/components/ResultDialog';
+import FeedbackDialog from '@/components/FeedbackDialog';
 import styles from './index.module.scss';
 
 // 错题本专项练习复用答题页，用固定的负数 id 作为其本地会话缓存 key，与真实科目区分开
@@ -48,6 +49,8 @@ const QuestionPage: React.FC = () => {
   const [answers, setAnswers] = useState<(ExamRecord | null)[]>([]);
   // 考试模式滑动切题的动画方向：next 从右滑入、prev 从左滑入
   const [slideDir, setSlideDir] = useState<'next' | 'prev' | null>(null);
+  // 题目反馈弹窗：做题时点击「题目有问题？点击反馈」打开
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
   const touchStart = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -472,6 +475,13 @@ const QuestionPage: React.FC = () => {
         </View>
       )}
 
+      <View className={styles.feedbackEntryRow}>
+        <Text className={styles.feedbackHint}>题目有问题？</Text>
+        <View className={styles.feedbackEntry} onClick={() => setFeedbackVisible(true)}>
+          <Text className={styles.feedbackEntryText}>点击反馈</Text>
+        </View>
+      </View>
+
       <View
         key={`${exam ? 'exam' : 'practice'}-${currentIndex}`}
         className={classnames(
@@ -600,6 +610,12 @@ const QuestionPage: React.FC = () => {
           </View>
         </View>
       </View>
+
+      <FeedbackDialog
+        visible={feedbackVisible}
+        questionId={question.id}
+        onCancel={() => setFeedbackVisible(false)}
+      />
     </View>
   );
 };
