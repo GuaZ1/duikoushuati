@@ -50,7 +50,7 @@ const FeedbackDialog: React.FC<FeedbackDialogProps> = ({ visible, questionId, on
       <View className={styles.dialog} onClick={(e) => e.stopPropagation()}>
         <Text className={styles.title}>题目反馈</Text>
         <Text className={styles.subtitle}>
-          发现题目有问题？请描述具体问题，我们会尽快处理。
+          发现题目有问题？请描述具体问题。
         </Text>
         <Textarea
           className={styles.textarea}

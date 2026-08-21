@@ -44,13 +44,6 @@
   color: $color-text-secondary;
 }
 
-.autoHint {
-  font-size: $font-size-xs;
-  line-height: 1.6;
-  color: $color-text-tertiary;
-  margin-top: $spacing-xs;
-}
-
 .button {
   @include button-reset;
   width: 100%;
