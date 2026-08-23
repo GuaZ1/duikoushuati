@@ -1,6 +1,7 @@
 import Taro from '@tarojs/taro';
 import {
   AnswerResult,
+  KnowledgePoint,
   LoginResponse,
   LastPracticePosition,
   ProgressItem,
@@ -271,6 +272,11 @@ export async function getLastPracticePosition(): Promise<LastPracticePosition | 
 // 后端就绪后自动刷新小程序重新拉取，避免显示与后端不一致的 mock 假学科。
 export async function getSubjects(): Promise<Subject[]> {
   return request<Subject[]>('/api/subjects', 'GET');
+}
+
+// 章节练习模式：按 subjectId 查询该学科下的知识点（章节）列表
+export async function getKnowledgePoints(subjectId: number): Promise<KnowledgePoint[]> {
+  return request<KnowledgePoint[]>(`/api/subjects/${subjectId}/knowledge-points`, 'GET');
 }
 
 export async function getQuestions(params?: {

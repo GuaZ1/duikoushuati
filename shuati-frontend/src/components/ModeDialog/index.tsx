@@ -4,7 +4,7 @@ import styles from './index.module.scss';
 
 interface ModeDialogProps {
   visible: boolean;
-  onSelect: (mode: 'practice' | 'exam') => void;
+  onSelect: (mode: 'practice' | 'exam' | 'chapter') => void;
   onCancel: () => void;
   // 该学科存在未完成的练习会话时显示「回到上次刷题位置」
   resumeAvailable?: boolean;
@@ -27,13 +27,17 @@ const ModeDialog: React.FC<ModeDialogProps> = ({
         <View className={styles.modeCard} onClick={() => onSelect('exam')}>
           <View className={styles.modeNameRow}>
             <Text className={styles.modeName}>考试模式</Text>
-            <Text className={styles.modeTag}>（推荐）</Text>
+            <Text className={styles.modeTag}>推荐</Text>
           </View>
           <Text className={styles.modeDesc}>随机 10 题，计时作答，答完看报告</Text>
         </View>
+        <View className={styles.modeCard} onClick={() => onSelect('chapter')}>
+          <Text className={styles.modeName}>章节练习模式</Text>
+          <Text className={styles.modeDesc}>按每科目的章节练习，逐题看解析</Text>
+        </View>
         <View className={styles.modeCard} onClick={() => onSelect('practice')}>
-          <Text className={styles.modeName}>练习模式</Text>
-          <Text className={styles.modeDesc}>随机乱序，逐题看解析，答完看正确率</Text>
+          <Text className={styles.modeName}>自由练习模式</Text>
+          <Text className={styles.modeDesc}>所有题目随机乱序，逐题看解析</Text>
         </View>
         {resumeAvailable && (
           <View className={styles.resumeCard} onClick={onResume}>

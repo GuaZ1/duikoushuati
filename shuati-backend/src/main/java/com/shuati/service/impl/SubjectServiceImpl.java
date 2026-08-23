@@ -1,6 +1,8 @@
 package com.shuati.service.impl;
 
+import com.shuati.entity.KnowledgePoint;
 import com.shuati.entity.Subject;
+import com.shuati.mapper.KnowledgePointMapper;
 import com.shuati.mapper.SubjectMapper;
 import com.shuati.service.SubjectService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import java.util.List;
 public class SubjectServiceImpl implements SubjectService {
 
     private final SubjectMapper subjectMapper;
+    private final KnowledgePointMapper knowledgePointMapper;
 
     @Override
     public List<Subject> list() {
@@ -22,5 +25,10 @@ public class SubjectServiceImpl implements SubjectService {
     @Override
     public Subject getById(Long id) {
         return subjectMapper.findById(id);
+    }
+
+    @Override
+    public List<KnowledgePoint> listKnowledgePoints(Long subjectId) {
+        return knowledgePointMapper.findBySubjectId(subjectId);
     }
 }

@@ -16,6 +16,14 @@ export interface Subject {
   image?: string;
 }
 
+export interface KnowledgePoint {
+  id: number;
+  subjectId: number;
+  parentId?: number;
+  name: string;
+  level?: number;
+}
+
 export type QuestionType =
   | 'SINGLE_CHOICE'
   | 'TRUE_FALSE'

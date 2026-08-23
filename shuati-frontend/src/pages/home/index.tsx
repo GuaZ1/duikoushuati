@@ -10,6 +10,7 @@ import StatCard from '@/components/StatCard';
 import EmptyState from '@/components/EmptyState';
 import ModeDialog from '@/components/ModeDialog';
 import ServerStartingDialog from '@/components/ServerStartingDialog';
+import KnowledgePointDialog from '@/components/KnowledgePointDialog';
 import styles from './index.module.scss';
 
 // 专业考试日期：2027-03-13（month 从 0 开始，2 表示三月）
@@ -45,6 +46,8 @@ const HomePage: React.FC = () => {
   const [initializing, setInitializing] = useState(true);
   const [serverStarting, setServerStarting] = useState(false);
   const [modeSubject, setModeSubject] = useState<number | null>(null);
+  // 章节练习模式：记录选中学科，弹知识点章节选择弹窗（仅展示，刷题行为后续再定）
+  const [chapterSubject, setChapterSubject] = useState<number | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchLastPosition = () => {
@@ -133,10 +136,15 @@ const HomePage: React.FC = () => {
     setModeSubject(subjectId);
   };
 
-  const handleModeSelect = (mode: 'practice' | 'exam') => {
+  const handleModeSelect = (mode: 'practice' | 'exam' | 'chapter') => {
     const sid = modeSubject;
     setModeSubject(null);
     if (sid == null) return;
+    // 章节练习模式：弹出知识点章节选择弹窗，暂不进入刷题页
+    if (mode === 'chapter') {
+      setChapterSubject(sid);
+      return;
+    }
     Taro.navigateTo({ url: `/pages/question/index?subjectId=${sid}&mode=${mode}` });
   };
 
@@ -271,6 +279,12 @@ const HomePage: React.FC = () => {
           onCancel={() => setModeSubject(null)}
           resumeAvailable={modeResumeAvailable}
           onResume={handleResume}
+        />
+        <KnowledgePointDialog
+          visible={chapterSubject !== null}
+          subjectId={chapterSubject ?? 0}
+          subjectName={subjects.find((s) => s.id === chapterSubject)?.name ?? ''}
+          onCancel={() => setChapterSubject(null)}
         />
         <ServerStartingDialog visible={serverStarting} onRestart={restartApp} />
       </View>
