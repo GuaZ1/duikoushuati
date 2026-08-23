@@ -53,6 +53,7 @@
 .count {
   font-size: $font-size-sm;
   color: $color-text-secondary;
+  margin-left: $spacing-sm;
 }
 
 .progressRight {
@@ -60,20 +61,8 @@
   align-items: center;
 }
 
-.feedbackEntryRow {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-bottom: $spacing-sm;
-}
-
-.feedbackHint {
-  font-size: $font-size-xs;
-  color: $color-text-tertiary;
-}
-
 .feedbackEntry {
-  margin-left: $spacing-xs;
+  margin-left: $spacing-sm;
   padding: 4rpx 16rpx;
   border-radius: $radius-xs;
   background: rgba($color-primary, 0.08);

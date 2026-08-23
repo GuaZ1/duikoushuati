@@ -452,6 +452,9 @@ const QuestionPage: React.FC = () => {
         </View>
         <View className={styles.progressRight}>
           {exam && <Text className={styles.timer}>{formatTime(elapsed)}</Text>}
+          <View className={styles.feedbackEntry} onClick={() => setFeedbackVisible(true)}>
+            <Text className={styles.feedbackEntryText}>题目有问题？点击反馈</Text>
+          </View>
           <Text className={styles.count}>
             {currentIndex + 1} / {questions.length}
           </Text>
@@ -474,13 +477,6 @@ const QuestionPage: React.FC = () => {
           </View>
         </View>
       )}
-
-      <View className={styles.feedbackEntryRow}>
-        <Text className={styles.feedbackHint}>题目有问题？</Text>
-        <View className={styles.feedbackEntry} onClick={() => setFeedbackVisible(true)}>
-          <Text className={styles.feedbackEntryText}>点击反馈</Text>
-        </View>
-      </View>
 
       <View
         key={`${exam ? 'exam' : 'practice'}-${currentIndex}`}
