@@ -57,6 +57,11 @@
   padding: 4rpx 12rpx;
   border-radius: $radius-xs;
   margin-left: $spacing-xs;
+  // 章节名过长时单行省略，避免撑高顶部进度条
+  max-width: 200rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .count {
