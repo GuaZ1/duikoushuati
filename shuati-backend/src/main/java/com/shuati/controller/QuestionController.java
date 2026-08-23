@@ -86,7 +86,14 @@ public class QuestionController {
         return ApiResult.ok(questionService.listWrongbookPractice(UserContext.getUserId()));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/chapter-practice")
+    public ApiResult<List<PracticeQuestionDto>> listForChapterPractice(
+            @RequestParam Long subjectId,
+            @RequestParam Long knowledgePointId) {
+        return ApiResult.ok(questionService.listForChapterPractice(subjectId, knowledgePointId));
+    }
+
+    @GetMapping("/{id:\\d+}")
     public ApiResult<QuestionDto> detail(@PathVariable Long id) {
         return ApiResult.ok(questionService.detail(id));
     }

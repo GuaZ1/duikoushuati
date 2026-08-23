@@ -4,7 +4,12 @@ import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import { AnswerResult, ExamRecord, ExamResultPayload, Question, WrongbookResultPayload } from '@/types';
 import { useUserStore } from '@/store/user';
-import { getPracticeQuestions, getWrongbookPracticeQuestions, submitAnswer } from '@/services/api';
+import {
+  getPracticeQuestions,
+  getChapterPracticeQuestions,
+  getWrongbookPracticeQuestions,
+  submitAnswer
+} from '@/services/api';
 import {
   startSession,
   startWrongbookSession,
@@ -75,6 +80,15 @@ const QuestionPage: React.FC = () => {
       setSubjectId(WRONGBOOK_SUBJECT_ID);
       setSubjectName('错题本');
       loadWrongbookQuestions();
+      return;
+    }
+    if (params?.mode === 'chapter') {
+      const sid = Number(params?.subjectId);
+      const kid = Number(params?.knowledgeId);
+      if (sid && kid) {
+        setSubjectId(sid);
+        loadChapterQuestions(sid, kid);
+      }
       return;
     }
     const sid = params?.subjectId;
@@ -166,6 +180,23 @@ const QuestionPage: React.FC = () => {
     // 新开一局（或续做时本地缓存已丢失）：拉题 → 洗牌 → 写入缓存。
     try {
       const list = await getPracticeQuestions({ subjectId: sid });
+      if (list.length === 0) {
+        setQuestions([]);
+        return;
+      }
+      const ordered = startSession(sid, list);
+      applyQuestions(ordered, 0);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // 章节练习模式：按知识点拉题 → 洗牌 → 写入缓存。
+  // 复用练习模式的会话机制（sessionKey 用 subjectId），正确率统计与跳题逻辑一致；
+  // 与自由练习共享同一份 subjectId 缓存，后开的会覆盖先开的续做位置，属可接受折衷。
+  const loadChapterQuestions = async (sid: number, knowledgeId: number) => {
+    try {
+      const list = await getChapterPracticeQuestions(sid, knowledgeId);
       if (list.length === 0) {
         setQuestions([]);
         return;

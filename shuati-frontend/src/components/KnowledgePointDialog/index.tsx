@@ -10,7 +10,7 @@ interface KnowledgePointDialogProps {
   subjectId: number;
   subjectName: string;
   onCancel: () => void;
-  // 点击某个知识点章节：当前阶段只做展示，刷题行为后续再定
+  // 点击某个知识点章节：进入该章节的答题页
   onSelect?: (point: KnowledgePoint) => void;
 }
 

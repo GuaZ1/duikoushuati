@@ -59,6 +59,17 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    @Cacheable(value = "practiceQuestions",
+            key = "'chapter-' + #subjectId + '-' + #knowledgePointId",
+            unless = "#result.isEmpty()")
+    public List<PracticeQuestionDto> listForChapterPractice(Long subjectId, Long knowledgePointId) {
+        // knowledge_point_ids 存的是单个知识点 id 的字符串，一题对应一个章节，精确匹配即可
+        List<QuestionPracticeVo> rows = questionMapper.findPracticeQuestionsByKnowledgePoint(
+                subjectId, String.valueOf(knowledgePointId));
+        return new ArrayList<>(buildPracticeDtos(rows).values());
+    }
+
+    @Override
     public List<PracticeQuestionDto> listWrongbookPractice(Long studentId) {
         List<WrongNotebook> entries = wrongNotebookMapper.findByStudentIdAndMasteredFalse(studentId);
         if (entries.isEmpty()) {

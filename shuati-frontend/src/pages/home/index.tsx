@@ -3,7 +3,7 @@ import { View, Text, Image } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { useUserStore } from '@/store/user';
 import { getCurrentUser, getLastPracticePosition, getMyStatistics, getSubjects } from '@/services/api';
-import { LastPracticePosition, Subject, UserStatistics } from '@/types';
+import { KnowledgePoint, LastPracticePosition, Subject, UserStatistics } from '@/types';
 import { getResumeKind, resumeExamSession, resumeSession } from '@/services/practiceSession';
 import getSubjectsMock from '@/data/subjects';
 import StatCard from '@/components/StatCard';
@@ -140,12 +140,22 @@ const HomePage: React.FC = () => {
     const sid = modeSubject;
     setModeSubject(null);
     if (sid == null) return;
-    // 章节练习模式：弹出知识点章节选择弹窗，暂不进入刷题页
+    // 章节练习模式：弹出知识点章节选择弹窗
     if (mode === 'chapter') {
       setChapterSubject(sid);
       return;
     }
     Taro.navigateTo({ url: `/pages/question/index?subjectId=${sid}&mode=${mode}` });
+  };
+
+  // 章节练习模式：点击某个章节，进入答题页，按该知识点拉题
+  const handleChapterSelect = (point: KnowledgePoint) => {
+    const sid = chapterSubject;
+    setChapterSubject(null);
+    if (sid == null) return;
+    Taro.navigateTo({
+      url: `/pages/question/index?subjectId=${sid}&mode=chapter&knowledgeId=${point.id}`
+    });
   };
 
   // 该学科存在未完成的练习或考试会话时，在模式弹窗里显示「回到上次刷题位置」
@@ -285,6 +295,7 @@ const HomePage: React.FC = () => {
           subjectId={chapterSubject ?? 0}
           subjectName={subjects.find((s) => s.id === chapterSubject)?.name ?? ''}
           onCancel={() => setChapterSubject(null)}
+          onSelect={handleChapterSelect}
         />
         <ServerStartingDialog visible={serverStarting} onRestart={restartApp} />
       </View>

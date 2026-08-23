@@ -67,6 +67,21 @@ public interface QuestionMapper {
             "</script>")
     List<QuestionPracticeVo> findPracticeQuestionsByIds(@Param("ids") List<Long> ids);
 
+    // 章节练习：按知识点精确匹配（knowledge_point_ids 存单个知识点 id，一题对应一个章节）
+    @Select("<script>" +
+            "SELECT q.id AS question_id, q.subject_id, s.name AS subject_name, " +
+            "q.type, q.difficulty, q.content, q.answer, q.analysis, q.score, " +
+            "q.knowledge_point_ids, q.source, " +
+            "o.id AS option_id, o.option_key, o.content AS option_content, o.is_correct " +
+            "FROM question q " +
+            "LEFT JOIN subject s ON q.subject_id = s.id " +
+            "LEFT JOIN question_option o ON q.id = o.question_id " +
+            "WHERE q.subject_id = #{subjectId} AND q.knowledge_point_ids = #{knowledgePointId} " +
+            "ORDER BY q.id, o.option_key" +
+            "</script>")
+    List<QuestionPracticeVo> findPracticeQuestionsByKnowledgePoint(@Param("subjectId") Long subjectId,
+                                                                  @Param("knowledgePointId") String knowledgePointId);
+
     @Insert("INSERT INTO question (subject_id, knowledge_point_ids, type, difficulty, content, answer, analysis, score, source) " +
             "VALUES (#{subjectId}, #{knowledgePointIds}, #{type}, #{difficulty}, #{content}, #{answer}, #{analysis}, #{score}, #{source})")
     @Options(useGeneratedKeys = true, keyProperty = "id")

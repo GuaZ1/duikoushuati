@@ -295,6 +295,14 @@ export async function getPracticeQuestions(params?: {
   return request<Question[]>('/api/questions/practice', 'GET', params, () => getQuestionsMock(params));
 }
 
+// 章节练习模式：按 subjectId + knowledgePointId 拉取该章节下的题目
+export async function getChapterPracticeQuestions(
+  subjectId: number,
+  knowledgePointId: number
+): Promise<Question[]> {
+  return request<Question[]>('/api/questions/chapter-practice', 'GET', { subjectId, knowledgePointId });
+}
+
 // 错题本专项练习：拉取当前用户所有科目、未掌握的错题（含 weight），乱序在前端完成
 export async function getWrongbookPracticeQuestions(): Promise<Question[]> {
   return request<Question[]>('/api/questions/wrongbook-practice', 'GET', undefined, () => getQuestionsMock());
