@@ -8,6 +8,7 @@ import com.shuati.entity.Question;
 import com.shuati.entity.QuestionOption;
 import com.shuati.entity.WrongNotebook;
 import com.shuati.enums.CorrectStatus;
+import com.shuati.enums.PracticeMode;
 import com.shuati.enums.QuestionType;
 import com.shuati.mapper.WrongNotebookMapper;
 import com.shuati.service.AnswerService;
@@ -57,6 +58,7 @@ public class AnswerServiceImpl implements AnswerService {
         record.setCorrectStatus(status);
         int score = status == CorrectStatus.CORRECT ? question.getScore() : 0;
         record.setScore(score);
+        record.setMode(resolveMode(request.getMode()));
         asyncAnswerService.insertAnswerRecord(record);
         long t3 = System.nanoTime();
         log.info("[submitAnswer] insert answer record (async): {} ms", (t3 - stepStart) / 1_000_000);
@@ -68,7 +70,7 @@ public class AnswerServiceImpl implements AnswerService {
         result.setAnalysis(question.getAnalysis());
         result.setScore(score);
 
-        boolean wrongbookMode = "WRONGBOOK".equalsIgnoreCase(request.getMode());
+        boolean wrongbookMode = PracticeMode.WRONGBOOK.name().equalsIgnoreCase(request.getMode());
         if (wrongbookMode) {
             // 错题本专项练习：同步更新权重，把最新 weight/mastered 直接回传给前端点亮 5 个点；
             // 不写学习进度、不更新"上次刷题位置"，避免污染普通练习的续做入口。
@@ -169,6 +171,19 @@ public class AnswerServiceImpl implements AnswerService {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toArray(String[]::new);
+    }
+
+    // 把前端传入的 mode 字符串规范化为枚举名（大写）。
+    // 前端可能传 'PRACTICE'/'EXAM'/'CHAPTER'/'WRONGBOOK'，空或无法识别时默认 PRACTICE。
+    private String resolveMode(String rawMode) {
+        if (rawMode == null || rawMode.isBlank()) {
+            return PracticeMode.PRACTICE.name();
+        }
+        try {
+            return PracticeMode.valueOf(rawMode.trim().toUpperCase()).name();
+        } catch (IllegalArgumentException e) {
+            return PracticeMode.PRACTICE.name();
+        }
     }
 
     private String findCorrectOptionKey(Question question) {

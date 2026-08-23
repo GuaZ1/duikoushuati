@@ -50,6 +50,15 @@
   border-radius: $radius-xs;
 }
 
+.chapterName {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  background: rgba($color-text-secondary, 0.08);
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+  margin-left: $spacing-xs;
+}
+
 .count {
   font-size: $font-size-sm;
   color: $color-text-secondary;

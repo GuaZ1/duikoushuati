@@ -154,7 +154,7 @@ const HomePage: React.FC = () => {
     setChapterSubject(null);
     if (sid == null) return;
     Taro.navigateTo({
-      url: `/pages/question/index?subjectId=${sid}&mode=chapter&knowledgeId=${point.id}`
+      url: `/pages/question/index?subjectId=${sid}&mode=chapter&knowledgeId=${point.id}&knowledgeName=${encodeURIComponent(point.name)}`
     });
   };
 

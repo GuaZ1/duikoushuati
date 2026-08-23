@@ -319,7 +319,7 @@ export async function getQuestionDetail(id: number): Promise<Question> {
 export async function submitAnswer(
   questionId: number,
   answer: string,
-  mode?: 'WRONGBOOK'
+  mode?: 'PRACTICE' | 'EXAM' | 'CHAPTER' | 'WRONGBOOK'
 ): Promise<AnswerResult> {
   return request<AnswerResult>('/api/answers', 'POST', { questionId, answer, mode }, () =>
     submitAnswerMock(questionId, answer)

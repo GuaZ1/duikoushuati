@@ -48,8 +48,12 @@ const QuestionPage: React.FC = () => {
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [subjectName, setSubjectName] = useState('');
+  // 章节练习模式：当前所在章节名，显示在科目名右侧
+  const [chapterName, setChapterName] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [exam, setExam] = useState(false);
+  // 章节练习模式：标识当前是否为章节练习（与自由练习区分，用于答题时上报 mode）
+  const [chapter, setChapter] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [answers, setAnswers] = useState<(ExamRecord | null)[]>([]);
   // 考试模式滑动切题的动画方向：next 从右滑入、prev 从左滑入
@@ -87,6 +91,8 @@ const QuestionPage: React.FC = () => {
       const kid = Number(params?.knowledgeId);
       if (sid && kid) {
         setSubjectId(sid);
+        setChapter(true);
+        setChapterName(params?.knowledgeName ? decodeURIComponent(params.knowledgeName) : '');
         loadChapterQuestions(sid, kid);
       }
       return;
@@ -267,7 +273,11 @@ const QuestionPage: React.FC = () => {
     }
     setSelected(optionKey);
     try {
-      const res = await submitAnswer(question.id, optionKey, wrongbook ? 'WRONGBOOK' : undefined);
+      const res = await submitAnswer(
+        question.id,
+        optionKey,
+        wrongbook ? 'WRONGBOOK' : exam ? 'EXAM' : chapter ? 'CHAPTER' : 'PRACTICE'
+      );
       if (res.correctStatus === 'CORRECT') {
         setCorrectCount((prev) => prev + 1);
       }
@@ -480,6 +490,7 @@ const QuestionPage: React.FC = () => {
             </View>
           )}
           <Text className={styles.subject}>{subjectName}</Text>
+          {chapterName && <Text className={styles.chapterName}>{chapterName}</Text>}
         </View>
         <View className={styles.progressRight}>
           {exam && <Text className={styles.timer}>{formatTime(elapsed)}</Text>}

@@ -8,8 +8,8 @@ import java.util.List;
 @Mapper
 public interface AnswerRecordMapper {
 
-    @Insert("INSERT INTO answer_record (student_id, question_id, student_answer, correct_status, score, created_at) " +
-            "VALUES (#{studentId}, #{questionId}, #{studentAnswer}, #{correctStatus}, #{score}, NOW())")
+    @Insert("INSERT INTO answer_record (student_id, question_id, student_answer, correct_status, score, mode, created_at) " +
+            "VALUES (#{studentId}, #{questionId}, #{studentAnswer}, #{correctStatus}, #{score}, #{mode}, NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(AnswerRecord record);
 
