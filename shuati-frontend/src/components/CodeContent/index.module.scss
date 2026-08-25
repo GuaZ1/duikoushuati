@@ -1,0 +1,25 @@
+@use '@/styles/variables.scss' as *;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.codeBlock {
+  display: block;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', 'Monaco',
+    'Source Code Pro', monospace;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  line-height: 1.6;
+  color: $color-text-primary;
+  background: #f5f6f8;
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  margin: $spacing-sm 0;
+  // 保留换行符与空格缩进，长行自动断行不横向溢出
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}

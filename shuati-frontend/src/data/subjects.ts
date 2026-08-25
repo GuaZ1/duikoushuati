@@ -4,7 +4,7 @@ const csharpImg = require('../assets/subjects/csharp.jpg');
 const jichuImg = require('../assets/subjects/计算机基础.jpg');
 const wangluoImg = require('../assets/subjects/计算机网络.jpg');
 const mysqlImg = require('../assets/subjects/mysql.jpg');
-const mathImg = require('../assets/subjects/math.png');
+const mathImg = require('../assets/subjects/math.jpg');
 
 const subjects: Subject[] = [
   { id: 1, name: 'C#', code: 'csharp', image: csharpImg },

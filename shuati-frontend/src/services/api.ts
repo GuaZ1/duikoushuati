@@ -283,6 +283,7 @@ export async function getQuestions(params?: {
   subjectId?: number;
   difficulty?: number;
   type?: string;
+  knowledgePointId?: number;
 }): Promise<Question[]> {
   return request<Question[]>('/api/questions', 'GET', params, () => getQuestionsMock(params));
 }

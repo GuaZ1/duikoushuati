@@ -69,8 +69,9 @@ public class QuestionController {
     public ApiResult<List<QuestionDto>> list(
             @RequestParam(required = false) Long subjectId,
             @RequestParam(required = false) Integer difficulty,
-            @RequestParam(required = false) QuestionType type) {
-        return ApiResult.ok(questionService.list(subjectId, difficulty, type));
+            @RequestParam(required = false) QuestionType type,
+            @RequestParam(required = false) Long knowledgePointId) {
+        return ApiResult.ok(questionService.list(subjectId, difficulty, type, knowledgePointId));
     }
 
     @GetMapping("/practice")

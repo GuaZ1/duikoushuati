@@ -2,7 +2,13 @@ import React, { useEffect, useState, useRef, Component } from 'react';
 import { View, Text, Image } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { useUserStore } from '@/store/user';
-import { getCurrentUser, getLastPracticePosition, getMyStatistics, getSubjects } from '@/services/api';
+import {
+  getCurrentUser,
+  getKnowledgePoints,
+  getLastPracticePosition,
+  getMyStatistics,
+  getSubjects
+} from '@/services/api';
 import { KnowledgePoint, LastPracticePosition, Subject, UserStatistics } from '@/types';
 import { getResumeKind, resumeExamSession, resumeSession } from '@/services/practiceSession';
 import getSubjectsMock from '@/data/subjects';
@@ -11,6 +17,7 @@ import EmptyState from '@/components/EmptyState';
 import ModeDialog from '@/components/ModeDialog';
 import ServerStartingDialog from '@/components/ServerStartingDialog';
 import KnowledgePointDialog from '@/components/KnowledgePointDialog';
+import { useBackPress } from '@/hooks/useBackPress';
 import styles from './index.module.scss';
 
 // 专业考试日期：2027-03-13（month 从 0 开始，2 表示三月）
@@ -46,9 +53,25 @@ const HomePage: React.FC = () => {
   const [initializing, setInitializing] = useState(true);
   const [serverStarting, setServerStarting] = useState(false);
   const [modeSubject, setModeSubject] = useState<number | null>(null);
-  // 章节练习模式：记录选中学科，弹知识点章节选择弹窗（仅展示，刷题行为后续再定）
+  // 章节练习模式：记录选中学科，弹知识点章节选择弹窗
   const [chapterSubject, setChapterSubject] = useState<number | null>(null);
+  // 预加载的知识点列表，弹窗打开时直接展示，避免「加载中」过渡帧
+  const [chapterPoints, setChapterPoints] = useState<KnowledgePoint[]>([]);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 返回键优先关闭弹窗：知识点选择弹窗 > 模式选择弹窗；无弹窗时才走默认返回
+  useBackPress(() => {
+    if (chapterSubject !== null) {
+      setChapterSubject(null);
+      setChapterPoints([]);
+      return true;
+    }
+    if (modeSubject !== null) {
+      setModeSubject(null);
+      return true;
+    }
+    return false;
+  });
 
   const fetchLastPosition = () => {
     return getLastPracticePosition()
@@ -136,13 +159,21 @@ const HomePage: React.FC = () => {
     setModeSubject(subjectId);
   };
 
-  const handleModeSelect = (mode: 'practice' | 'exam' | 'chapter') => {
+  const handleModeSelect = async (mode: 'practice' | 'exam' | 'chapter') => {
     const sid = modeSubject;
     setModeSubject(null);
     if (sid == null) return;
-    // 章节练习模式：弹出知识点章节选择弹窗
+    // 章节练习模式：先预加载知识点列表，加载完成后直接弹出知识点弹窗（无「加载中」过渡帧）
     if (mode === 'chapter') {
-      setChapterSubject(sid);
+      try {
+        const list = await getKnowledgePoints(sid);
+        setChapterPoints(list);
+        setChapterSubject(sid);
+      } catch (e) {
+        console.log('[HomePage] 拉取知识点失败:', e);
+        setChapterPoints([]);
+        setChapterSubject(sid);
+      }
       return;
     }
     Taro.navigateTo({ url: `/pages/question/index?subjectId=${sid}&mode=${mode}` });
@@ -152,10 +183,17 @@ const HomePage: React.FC = () => {
   const handleChapterSelect = (point: KnowledgePoint) => {
     const sid = chapterSubject;
     setChapterSubject(null);
+    setChapterPoints([]);
     if (sid == null) return;
     Taro.navigateTo({
       url: `/pages/question/index?subjectId=${sid}&mode=chapter&knowledgeId=${point.id}&knowledgeName=${encodeURIComponent(point.name)}`
     });
+  };
+
+  // 关闭知识点弹窗：清空列表，下次重新预加载
+  const closeChapterDialog = () => {
+    setChapterSubject(null);
+    setChapterPoints([]);
   };
 
   // 该学科存在未完成的练习或考试会话时，在模式弹窗里显示「回到上次刷题位置」
@@ -292,9 +330,9 @@ const HomePage: React.FC = () => {
         />
         <KnowledgePointDialog
           visible={chapterSubject !== null}
-          subjectId={chapterSubject ?? 0}
           subjectName={subjects.find((s) => s.id === chapterSubject)?.name ?? ''}
-          onCancel={() => setChapterSubject(null)}
+          points={chapterPoints}
+          onCancel={closeChapterDialog}
           onSelect={handleChapterSelect}
         />
         <ServerStartingDialog visible={serverStarting} onRestart={restartApp} />

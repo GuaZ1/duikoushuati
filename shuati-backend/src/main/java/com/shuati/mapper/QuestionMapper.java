@@ -25,12 +25,14 @@ public interface QuestionMapper {
             "<if test='subjectId != null'>AND subject_id = #{subjectId}</if>" +
             "<if test='difficulty != null'>AND difficulty = #{difficulty}</if>" +
             "<if test='type != null'>AND type = #{type}</if>" +
+            "<if test='knowledgePointId != null'>AND knowledge_point_ids = #{knowledgePointId}</if>" +
             "</where>" +
             "ORDER BY id" +
             "</script>")
     List<Question> findByConditions(@Param("subjectId") Long subjectId,
                                     @Param("difficulty") Integer difficulty,
-                                    @Param("type") QuestionType type);
+                                    @Param("type") QuestionType type,
+                                    @Param("knowledgePointId") String knowledgePointId);
 
     @Select("<script>" +
             "SELECT q.id AS question_id, q.subject_id, s.name AS subject_name, " +

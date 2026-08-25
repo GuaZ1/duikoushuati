@@ -40,8 +40,10 @@ public class QuestionServiceImpl implements QuestionService {
     private final CacheManager cacheManager;
 
     @Override
-    public List<QuestionDto> list(Long subjectId, Integer difficulty, QuestionType type) {
-        List<Question> questions = questionMapper.findByConditions(subjectId, difficulty, type);
+    public List<QuestionDto> list(Long subjectId, Integer difficulty, QuestionType type, Long knowledgePointId) {
+        List<Question> questions = questionMapper.findByConditions(
+                subjectId, difficulty, type,
+                knowledgePointId == null ? null : String.valueOf(knowledgePointId));
         Map<Long, String> subjectNameMap = subjectMapper.findAll().stream()
                 .collect(Collectors.toMap(Subject::getId, Subject::getName));
         return questions.stream()

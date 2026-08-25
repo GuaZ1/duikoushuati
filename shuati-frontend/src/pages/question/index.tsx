@@ -25,6 +25,9 @@ import {
 import EmptyState from '@/components/EmptyState';
 import ResultDialog from '@/components/ResultDialog';
 import FeedbackDialog from '@/components/FeedbackDialog';
+import AnswerCardDialog from '@/components/AnswerCardDialog';
+import CodeContent from '@/components/CodeContent';
+import { useBackPress } from '@/hooks/useBackPress';
 import styles from './index.module.scss';
 
 // 错题本专项练习复用答题页，用固定的负数 id 作为其本地会话缓存 key，与真实科目区分开
@@ -60,7 +63,26 @@ const QuestionPage: React.FC = () => {
   const [slideDir, setSlideDir] = useState<'next' | 'prev' | null>(null);
   // 题目反馈弹窗：做题时点击「题目有问题？点击反馈」打开
   const [feedbackVisible, setFeedbackVisible] = useState(false);
+  // 答题卡弹窗：自由练习 / 章节练习模式，点击题号跳转
+  const [answerCardVisible, setAnswerCardVisible] = useState(false);
   const touchStart = useRef({ x: 0, y: 0 });
+
+  // 返回键优先关闭弹窗：答题卡 > 题目反馈 > 结果弹窗；无弹窗时才走默认返回
+  useBackPress(() => {
+    if (answerCardVisible) {
+      setAnswerCardVisible(false);
+      return true;
+    }
+    if (feedbackVisible) {
+      setFeedbackVisible(false);
+      return true;
+    }
+    if (showDialog) {
+      setShowDialog(false);
+      return true;
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (!user) {
@@ -422,10 +444,6 @@ const QuestionPage: React.FC = () => {
     }
   };
 
-  const goHome = () => {
-    Taro.switchTab({ url: '/pages/home/index' });
-  };
-
   const handleNext = () => {
     if (exam) {
       examNext(true);
@@ -484,11 +502,6 @@ const QuestionPage: React.FC = () => {
     <View className={styles.page} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <View className={styles.progress}>
         <View className={styles.progressLeft}>
-          {exam && (
-            <View className={styles.prevButton} onClick={goHome}>
-              <Text className={styles.prevText}>‹ 返回主页</Text>
-            </View>
-          )}
           <Text className={styles.subject}>{subjectName}</Text>
           {chapterName && <Text className={styles.chapterName}>{chapterName}</Text>}
         </View>
@@ -531,7 +544,7 @@ const QuestionPage: React.FC = () => {
         {question.type === 'FILL_BLANK' && (
           <Text className={styles.fillHint}>如果有多个空，用逗号隔开，不区分大小写</Text>
         )}
-        <Text className={styles.content}>{question.content}</Text>
+        <CodeContent content={question.content} textClassName={styles.content} />
       </View>
 
       <View className={styles.card}>
@@ -632,6 +645,11 @@ const QuestionPage: React.FC = () => {
           >
             <Text className={styles.navArrowText}>‹</Text>
           </View>
+          {!exam && !wrongbook && (
+            <View className={styles.answerCardBtn} onClick={() => setAnswerCardVisible(true)}>
+              <Text className={styles.answerCardBtnText}>答题卡</Text>
+            </View>
+          )}
           {footerVisible && (
             <View className={styles.submitButtonFlex} onClick={handleNext}>
               <Text className={styles.submitText}>{footerText}</Text>
@@ -653,6 +671,15 @@ const QuestionPage: React.FC = () => {
         visible={feedbackVisible}
         questionId={question.id}
         onCancel={() => setFeedbackVisible(false)}
+      />
+
+      <AnswerCardDialog
+        visible={answerCardVisible}
+        total={questions.length}
+        currentIndex={currentIndex}
+        answered={answers}
+        onJump={(index) => jumpTo(index, index > currentIndex ? 'next' : 'prev')}
+        onCancel={() => setAnswerCardVisible(false)}
       />
     </View>
   );

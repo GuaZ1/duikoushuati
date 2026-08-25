@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface QuestionService {
 
-    List<QuestionDto> list(Long subjectId, Integer difficulty, QuestionType type);
+    List<QuestionDto> list(Long subjectId, Integer difficulty, QuestionType type, Long knowledgePointId);
 
     List<PracticeQuestionDto> listForPractice(Long subjectId, Integer difficulty, QuestionType type);
 
