@@ -22,10 +22,10 @@ public interface QuestionMapper {
 
     @Select("<script>SELECT * FROM question " +
             "<where>" +
-            "<if test='subjectId != null'>AND subject_id = #{subjectId}</if>" +
-            "<if test='difficulty != null'>AND difficulty = #{difficulty}</if>" +
-            "<if test='type != null'>AND type = #{type}</if>" +
-            "<if test='knowledgePointId != null'>AND knowledge_point_ids = #{knowledgePointId}</if>" +
+            "<if test='subjectId != null'>AND subject_id = #{subjectId} </if>" +
+            "<if test='difficulty != null'>AND difficulty = #{difficulty} </if>" +
+            "<if test='type != null'>AND type = #{type} </if>" +
+            "<if test='knowledgePointId != null'>AND knowledge_point_ids = #{knowledgePointId} </if>" +
             "</where>" +
             "ORDER BY id" +
             "</script>")
@@ -43,9 +43,9 @@ public interface QuestionMapper {
             "LEFT JOIN subject s ON q.subject_id = s.id " +
             "LEFT JOIN question_option o ON q.id = o.question_id " +
             "<where>" +
-            "<if test='subjectId != null'>AND q.subject_id = #{subjectId}</if>" +
-            "<if test='difficulty != null'>AND q.difficulty = #{difficulty}</if>" +
-            "<if test='type != null'>AND q.type = #{type}</if>" +
+            "<if test='subjectId != null'>AND q.subject_id = #{subjectId} </if>" +
+            "<if test='difficulty != null'>AND q.difficulty = #{difficulty} </if>" +
+            "<if test='type != null'>AND q.type = #{type} </if>" +
             "</where>" +
             "ORDER BY q.id, o.option_key" +
             "</script>")
