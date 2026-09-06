@@ -30,8 +30,7 @@ public class AnswerServiceImpl implements AnswerService {
     private final AsyncAnswerService asyncAnswerService;
     private final WrongNotebookMapper wrongNotebookMapper;
 
-    // 错题本专项练习：连续答对累计到该权重即视为掌握，错题本不再展示该题
-    private static final int MASTER_WEIGHT = 5;
+    // 错题本专项练习：连续答对累计到权重 5 即视为掌握，错题本不再展示该题（阈值见 WrongNotebookMapper SQL）
 
     @Override
     public AnswerResultDto submitAnswer(AnswerRequest request) {
@@ -99,25 +98,17 @@ public class AnswerServiceImpl implements AnswerService {
         return result;
     }
 
-    // 错题本专项练习的权重结算：答对 +1（封顶 5，达到即掌握），答错清零重来；
-    // 若该题不在错题本（已掌握或从未答错）则不做任何处理。
+    // 错题本专项练习的权重结算：答对 +1（封顶 5，达到即掌握）、答错清零重来。
+    // 用单条原子 UPDATE（仅命中未掌握记录）替换原先「查-改-写」，同题并发作答不丢更新；
+    // 若该题不在错题本或已掌握，UPDATE 命中 0 行，与原先「不做任何处理」语义一致。
     private WrongNotebook applyWrongbookWeight(Long studentId, Long questionId, CorrectStatus status) {
-        WrongNotebook notebook = wrongNotebookMapper.findByStudentIdAndQuestionId(studentId, questionId);
-        if (notebook == null || Boolean.TRUE.equals(notebook.getMastered())) {
-            return notebook;
-        }
-        int weight = notebook.getWeight() == null ? 0 : notebook.getWeight();
         if (status == CorrectStatus.CORRECT) {
-            weight = Math.min(weight + 1, MASTER_WEIGHT);
-            notebook.setWeight(weight);
-            if (weight >= MASTER_WEIGHT) {
-                notebook.setMastered(true);
-            }
+            wrongNotebookMapper.incrementWeightOnCorrect(studentId, questionId);
         } else {
-            notebook.setWeight(0);
+            wrongNotebookMapper.resetWeightOnWrong(studentId, questionId);
         }
-        wrongNotebookMapper.update(notebook);
-        return notebook;
+        // 回读最新 weight/mastered 供答题页点亮 5 个点；行不存在时返回 null，前端不更新
+        return wrongNotebookMapper.findByStudentIdAndQuestionId(studentId, questionId);
     }
 
     private CorrectStatus grade(Question question, String studentAnswer) {

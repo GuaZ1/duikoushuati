@@ -71,7 +71,8 @@ CREATE TABLE answer_record (
     student_answer TEXT,
     correct_status VARCHAR(20) NOT NULL,
     score INT,
-    created_at DATETIME
+    created_at DATETIME,
+    mode VARCHAR(20) NOT NULL DEFAULT 'PRACTICE' COMMENT '刷题模式：PRACTICE自由练习/EXAM考试/CHAPTER章节练习/WRONGBOOK错题本'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE wrong_notebook (
@@ -79,9 +80,9 @@ CREATE TABLE wrong_notebook (
     student_id BIGINT NOT NULL,
     question_id BIGINT NOT NULL,
     wrong_count INT,
-    weight INT DEFAULT 0,
     last_wrong_at DATETIME,
     mastered BOOLEAN,
+    weight INT NOT NULL DEFAULT 0 COMMENT '错题权重：专项练习答对+1、答错清零，累计到5视为掌握',
     UNIQUE KEY uk_student_question (student_id, question_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -109,7 +110,7 @@ CREATE TABLE user_last_practice (
 CREATE TABLE question_feedback (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     question_id BIGINT NOT NULL,
-    user_id BIGINT NOT NULL,
+    user_id BIGINT COMMENT '提交反馈的用户（匿名场景可空）',
     content TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at DATETIME NOT NULL,

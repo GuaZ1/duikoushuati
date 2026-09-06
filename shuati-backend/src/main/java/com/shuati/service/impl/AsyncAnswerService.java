@@ -1,9 +1,6 @@
 package com.shuati.service.impl;
 
 import com.shuati.entity.AnswerRecord;
-import com.shuati.entity.StudyProgress;
-import com.shuati.entity.UserLastPractice;
-import com.shuati.entity.WrongNotebook;
 import com.shuati.enums.CorrectStatus;
 import com.shuati.mapper.AnswerRecordMapper;
 import com.shuati.mapper.StudyProgressMapper;
@@ -15,7 +12,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 
 @Slf4j
@@ -28,15 +24,15 @@ public class AsyncAnswerService {
     private final AnswerRecordMapper answerRecordMapper;
     private final UserLastPracticeMapper userLastPracticeMapper;
 
+    // 说明：@Async 方法抛出的异常不会传回已返回的 HTTP 调用线程，
+    // 统一由 AsyncConfig.getAsyncUncaughtExceptionHandler 记录（含方法名与参数），
+    // 这里不再 try/catch 吞掉，避免落库失败只留下一条 INFO 时间日志、数据静默丢失。
     @Async("answerAsyncExecutor")
     @Transactional
     public void insertAnswerRecord(AnswerRecord record) {
         long start = System.nanoTime();
         try {
             answerRecordMapper.insert(record);
-        } catch (Exception e) {
-            log.error("[async insertAnswerRecord] failed, studentId={}, questionId={}",
-                    record.getStudentId(), record.getQuestionId(), e);
         } finally {
             log.info("[async insertAnswerRecord] {} ms, studentId={}, questionId={}",
                     (System.nanoTime() - start) / 1_000_000, record.getStudentId(), record.getQuestionId());
@@ -48,33 +44,12 @@ public class AsyncAnswerService {
     public void updateWrongNotebook(Long studentId, Long questionId, CorrectStatus status) {
         long start = System.nanoTime();
         try {
-            WrongNotebook notebook = wrongNotebookMapper.findByStudentIdAndQuestionId(studentId, questionId);
+            // 单条原子 SQL：答对置已掌握；答错「有则 +1 并置回未掌握、无则插入」，并发下不丢更新
             if (status == CorrectStatus.CORRECT) {
-                if (notebook != null) {
-                    notebook.setMastered(true);
-                    wrongNotebookMapper.update(notebook);
-                }
-                return;
-            }
-            if (notebook == null) {
-                notebook = new WrongNotebook();
-                notebook.setStudentId(studentId);
-                notebook.setQuestionId(questionId);
-                notebook.setWrongCount(0);
-                notebook.setWeight(0);
-                notebook.setMastered(false);
-            }
-            notebook.setWrongCount(notebook.getWrongCount() + 1);
-            notebook.setMastered(false);
-            notebook.setLastWrongAt(LocalDateTime.now());
-            if (notebook.getId() == null) {
-                wrongNotebookMapper.insert(notebook);
+                wrongNotebookMapper.markMastered(studentId, questionId);
             } else {
-                wrongNotebookMapper.update(notebook);
+                wrongNotebookMapper.upsertWrong(studentId, questionId);
             }
-        } catch (Exception e) {
-            log.error("[async updateWrongNotebook] failed, studentId={}, questionId={}, status={}",
-                    studentId, questionId, status, e);
         } finally {
             log.info("[async updateWrongNotebook] {} ms, studentId={}, questionId={}",
                     (System.nanoTime() - start) / 1_000_000, studentId, questionId);
@@ -98,32 +73,10 @@ public class AsyncAnswerService {
             if (firstKpId == null) {
                 return;
             }
-            StudyProgress progress = studyProgressMapper
-                    .findByUserIdAndSubjectIdAndKnowledgePointId(userId, subjectId, firstKpId);
-            if (progress == null) {
-                progress = new StudyProgress();
-                progress.setUserId(userId);
-                progress.setSubjectId(subjectId);
-                progress.setKnowledgePointId(firstKpId);
-                progress.setPracticedCount(0);
-                progress.setCorrectCount(0);
-                progress.setMasteryRate(0);
-            }
-            progress.setPracticedCount(progress.getPracticedCount() + 1);
-            if (status == CorrectStatus.CORRECT) {
-                progress.setCorrectCount(progress.getCorrectCount() + 1);
-            }
-            int rate = progress.getPracticedCount() == 0 ? 0
-                    : progress.getCorrectCount() * 100 / progress.getPracticedCount();
-            progress.setMasteryRate(Math.min(rate, 100));
-            if (progress.getId() == null) {
-                studyProgressMapper.insert(progress);
-            } else {
-                studyProgressMapper.update(progress);
-            }
-        } catch (Exception e) {
-            log.error("[async updateStudyProgress] failed, userId={}, subjectId={}, knowledgePointIds={}",
-                    userId, subjectId, knowledgePointIds, e);
+            int correctIncrement = status == CorrectStatus.CORRECT ? 1 : 0;
+            // 同一知识点行的并发作答由 upsert 行锁串行化，计数不丢；随后在同一事务内重算掌握率
+            studyProgressMapper.upsertCounts(userId, subjectId, firstKpId, correctIncrement);
+            studyProgressMapper.recalcMastery(userId, subjectId, firstKpId);
         } finally {
             log.info("[async updateStudyProgress] {} ms, userId={}, subjectId={}",
                     (System.nanoTime() - start) / 1_000_000, userId, subjectId);
@@ -138,22 +91,7 @@ public class AsyncAnswerService {
             if (userId == null || subjectId == null || questionId == null) {
                 return;
             }
-            UserLastPractice position = userLastPracticeMapper.findByUserIdAndSubjectId(userId, subjectId);
-            if (position == null) {
-                position = new UserLastPractice();
-                position.setUserId(userId);
-                position.setSubjectId(subjectId);
-            }
-            position.setQuestionId(questionId);
-            position.setLastPracticeAt(LocalDateTime.now());
-            if (position.getId() == null) {
-                userLastPracticeMapper.insert(position);
-            } else {
-                userLastPracticeMapper.update(position);
-            }
-        } catch (Exception e) {
-            log.error("[async updateLastPracticePosition] failed, userId={}, subjectId={}, questionId={}",
-                    userId, subjectId, questionId, e);
+            userLastPracticeMapper.upsertPosition(userId, subjectId, questionId);
         } finally {
             log.info("[async updateLastPracticePosition] {} ms, userId={}, subjectId={}",
                     (System.nanoTime() - start) / 1_000_000, userId, subjectId);
