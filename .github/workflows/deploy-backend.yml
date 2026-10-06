@@ -1,0 +1,32 @@
+name: 部署后端到服务器
+
+# 触发条件：只有后端代码或本文件变动时才部署，前端改动不触发
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'shuati-backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  # 允许在 GitHub 网页上手动触发（Actions → 本工作流 → Run workflow）
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: SSH 到服务器执行部署脚本
+    runs-on: ubuntu-latest
+    steps:
+      - name: 配置 SSH 私钥
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: 执行部署脚本
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new \
+              -o ConnectTimeout=15 \
+              -i ~/.ssh/deploy_key \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "bash /root/deploy-backend.sh"
