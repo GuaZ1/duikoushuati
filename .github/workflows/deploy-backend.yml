@@ -16,17 +16,27 @@ jobs:
     name: SSH 到服务器执行部署脚本
     runs-on: ubuntu-latest
     steps:
+      # Secret 统一通过 env 注入，避免值里的空格/换行破坏 shell 命令结构
       - name: 配置 SSH 私钥
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SSH_HOST: ${{ secrets.SERVER_HOST }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: 检查远程环境
+        env:
+          SSH_HOST: ${{ secrets.SERVER_HOST }}
+          SSH_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          ssh -T -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "$SSH_USER@$SSH_HOST" "whoami; echo HOME=\$HOME; ls -l /root/deploy-backend.sh"
 
       - name: 执行部署脚本
+        env:
+          SSH_HOST: ${{ secrets.SERVER_HOST }}
+          SSH_USER: ${{ secrets.SERVER_USER }}
         run: |
-          ssh -o StrictHostKeyChecking=accept-new \
-              -o ConnectTimeout=15 \
-              -i ~/.ssh/deploy_key \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-              "bash /root/deploy-backend.sh"
+          ssh -T -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" "bash /root/deploy-backend.sh"
